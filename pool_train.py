@@ -22,5 +22,3 @@ pool_epochs = 2000
 # Train model
 model.pool_train(pool_epochs, grid_size, optimizer, sample_size = 4, pool_size = 32)
 torch.save(model, "./model_params/model.pt")
-
-print('lol')
