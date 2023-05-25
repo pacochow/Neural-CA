@@ -8,7 +8,7 @@ import cv2
 from tqdm import tqdm
 
 class CAModel(nn.Module):
-    """_summary_
+    """
 
     Input: 1x48x2828
     Output: 1x16x28x28
@@ -37,7 +37,7 @@ class CAModel(nn.Module):
         return out
 
     def init_seed(self, grid_size):
-        """_summary_
+        """ Initialise seed
 
         :return: 1, 16 channels, 28 pixels, 28 pixels
         :rtype: torch tensor
@@ -53,6 +53,12 @@ class CAModel(nn.Module):
         return seed
     
     def init_pool(self, grid_size, pool_size = 1024):
+        """ Initialise pool
+
+        :return: Pool of seed
+        :rtype: pool_size, 16, 28, 28
+        """
+        
         
         seed = self.init_seed(grid_size)
         pool = seed.repeat(pool_size, 1, 1, 1)
@@ -60,7 +66,7 @@ class CAModel(nn.Module):
         return pool
 
     def perceive(self, state_grid, angle = 0.0):
-        """_summary_
+        """ Compute perception vectors
 
         :param state_grid: 1, 16, 28, 28
         :type state_grid: torch tensor
@@ -93,8 +99,7 @@ class CAModel(nn.Module):
         return perception_grid
 
     def stochastic_update(self, state_grid, ds_grid):
-        """_summary_
-        Apply stochastic mask so that all cells do not update together.
+        """ Apply stochastic mask so that all cells do not update together.
 
         :param state_grid: 1x16x28x28
         :type state_grid: torch tensor
@@ -118,8 +123,7 @@ class CAModel(nn.Module):
         return state_grid+ds_grid
 
     def alive_masking(self, state_grid):
-        """_summary_
-        Mask out dead cells.
+        """ Mask out dead cells.
         
         :param state_grid: 1x16x28x28
         :type state_grid: torch tensor
@@ -157,6 +161,9 @@ class CAModel(nn.Module):
     
     def train(self, n_epochs, grid_size, optimizer):
         
+        """Naive training
+        """
+        
         self.losses = []
         
         for epoch in range(n_epochs):  
@@ -190,6 +197,8 @@ class CAModel(nn.Module):
     
     
     def pool_train(self, n_epochs, grid_size, optimizer, sample_size = 32, pool_size = 128):
+        """ Train with pool
+        """
         
         # Initialise pool
         seed = self.init_seed(grid_size)
@@ -217,9 +226,7 @@ class CAModel(nn.Module):
             # Reseed highest loss sample
             sample[index] = seed
              
-            # Train with sample
-            
-           
+            # Train with sample   
             iterations = np.random.randint(64, 97)
             
             for t in range(iterations):
@@ -237,7 +244,6 @@ class CAModel(nn.Module):
                     # plt.show()
                 
             self.losses.append(loss.item())
-            # print(loss.item())
             loss.backward()
             optimizer.step()
             
@@ -247,6 +253,8 @@ class CAModel(nn.Module):
         
     
     def run(self, iterations, grid_size = 28):
+        """ Run model and save state history
+        """
     
         state_grid = self.init_seed(grid_size)
         state_history = np.zeros((iterations, 28, 28, 1))
@@ -273,7 +281,7 @@ class CAModel(nn.Module):
 
 # Helper functions
 def state_to_image(state):
-    """_summary_
+    """ Convert state to image
 
     :param state: nx16x28x28
     :type state: Tensor
