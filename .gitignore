@@ -1,0 +1,7 @@
+/.DS_Store
+/.vscode
+/__pycache__
+/media
+/model_params
+/testing.ipynb
+/venv
