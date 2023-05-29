@@ -12,7 +12,7 @@ def create_animation(states, iterations, nSeconds, filename):
     fig = plt.figure( figsize=(8,8) )
 
     a = states[0]
-    im = plt.imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=255)
+    im = plt.imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
     plt.axis('off')
 
     def animate_func(i):
