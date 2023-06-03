@@ -9,35 +9,35 @@ from tqdm import tqdm
 from helpers.helpers import *
 from src import grid
 
-class CAModel(nn.Module):
+class Env_CA(nn.Module):
     """
 
     Input: n,48,grid_size,grid_size
     Output: n,16,grid_size,grid_size
     """
-    def __init__(self, target, grid_size, num_channels = 16, fire_rate = 0.5):
-        super(CAModel, self).__init__()
+    def __init__(self, target, grid_size, model_channels = 16, env_channels = 1, fire_rate = 0.5):
+        super(Env_CA, self).__init__()
         
         self.target = torch.tensor(target)
         self.grid_size = grid_size
-        self.num_channels = num_channels
+        self.model_channels = model_channels
+        self.env_channels = env_channels
         self.fire_rate = fire_rate
     
+        self.num_channels = model_channels + env_channels
         self.input_dim = self.num_channels*3
         
         # Update network
         self.conv1 = nn.Conv2d(self.input_dim, 128, 1)
-        self.mid = nn.Conv2d(128, 256, 1) 
-        self.conv2 = nn.Conv2d(256, self.num_channels, 1)
+        self.conv2 = nn.Conv2d(128, self.model_channels, 1)
+        nn.init.xavier_uniform_(self.conv1.weight)
+        nn.init.zeros_(self.conv1.bias)
         self.relu = nn.ReLU()
-        self.conv2.weight.data.fill_(0)
-        self.conv2.bias.data.fill_(0)
+        nn.init.zeros_(self.conv2.weight)
+        nn.init.zeros_(self.conv2.bias)
 
     def forward(self, x):
-        out = self.conv1(x)
-        out = self.relu(out)
-        out = self.mid(out)
-        out = self.relu(out)
+        out = self.relu(self.conv1(x))
         out = self.conv2(out)
         
         return out
@@ -45,9 +45,9 @@ class CAModel(nn.Module):
     def perceive(self, state_grid, angle = 0.0):
         """ Compute perception vectors
 
-        :param state_grid: n, 16, grid_size, grid_size
+        :param state_grid: n, 17, grid_size, grid_size
         :type state_grid: torch tensor
-        :return: 1, 48, grid_size, grid_size
+        :return: n, 51, grid_size, grid_size
         :rtype: torch tensor
         """    
         
@@ -81,7 +81,7 @@ class CAModel(nn.Module):
         :type state_grid: torch tensor
         :param ds_grid: n,16,grid_size,grid_size
         :type ds_grid: torch tensor
-        :return: 1,16,grid_size,grid_size
+        :return: n,16,grid_size,grid_size
         :rtype: torch tensor
         """
         
@@ -89,10 +89,10 @@ class CAModel(nn.Module):
         size = ds_grid.shape[-1]
         
         # Random mask 
-        rand_mask = (torch.rand(1, 1, size,size)<self.fire_rate)
+        rand_mask = (torch.rand(ds_grid.shape[0], 1, size,size)<self.fire_rate)
         
         # Apply same random mask to every channel of same position
-        rand_mask = rand_mask.repeat(ds_grid.shape[0], 1, 1, 1)
+        rand_mask = rand_mask.repeat(1, self.model_channels, 1, 1)
         
         # Zero updates for cells that are masked out
         ds_grid = ds_grid*rand_mask
@@ -101,9 +101,9 @@ class CAModel(nn.Module):
     def alive_masking(self, state_grid):
         """ Returns mask for dead cells
         
-        :param state_grid: n,16,grid_size,grid_size
+        :param state_grid: n,17,grid_size,grid_size
         :type state_grid: torch tensor
-        :return: n,16,grid_size,grid_size
+        :return: n,1,grid_size,grid_size
         :rtype: torch tensor
         """
         
@@ -115,15 +115,17 @@ class CAModel(nn.Module):
 
         return alive.unsqueeze(1)
     
-    def update(self, state_grid, angle = 0.0):
+    def update(self, state_grid, env, angle = 0.0):
         
         # Pre update life mask
         pre_mask = self.alive_masking(state_grid)
         
-        ds_grid = torch.zeros(self.num_channels, 1, self.grid_size, self.grid_size)
+        ds_grid = torch.zeros(self.model_channels, 1, self.grid_size, self.grid_size)
         
-        # Perceive
-        perception_grid = self.perceive(state_grid, angle)
+        # Perceive       
+        full_grid = torch.cat([state_grid,env], dim = 1)
+        
+        perception_grid = self.perceive(full_grid, angle)
         
         # Apply update rule to all cells
         ds_grid = self.forward(perception_grid)

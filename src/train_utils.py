@@ -7,16 +7,20 @@ import matplotlib.pyplot as plt
 import cv2
 from tqdm import tqdm
 from helpers.helpers import *
+from helpers.visualizer import visualize_training
 from src import grid
 
     
     
-def train(model, grid, n_epochs, sample_size = 8, pool_size = 64, regenerate = True):
-    """ Train with pool
+def train(model, grid, n_epochs, sample_size = 8, pool_size = 1024, regenerate = True):
+    """ 
+    Train with pool
     """
     
-    optimizer = optim.Adam(model.parameters(), lr = 1e-3)
+    # Define optimizer and scheduler
+    optimizer = optim.Adam(model.parameters(), lr = 2e-3, eps = 1e-7)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = [2000], gamma = 0.1)
+    
     grid_size = grid.grid_size
     
     # Initialise pool
@@ -25,7 +29,7 @@ def train(model, grid, n_epochs, sample_size = 8, pool_size = 64, regenerate = T
     
     model_losses = []
     
-    for epoch in tqdm(range(n_epochs)):
+    for epoch in tqdm(range(n_epochs+1)):
         
         optimizer.zero_grad()
         
@@ -33,26 +37,23 @@ def train(model, grid, n_epochs, sample_size = 8, pool_size = 64, regenerate = T
         
         # Select indices from pool
         indices = np.random.randint(pool_size, size = sample_size)
-        sample = pool[indices]
+        x0 = pool[indices]
         
         # Calculate loss of samples
-        sample_images = state_to_image(sample)
+        sample_images = state_to_image(x0)
         losses = ((sample_images - model.target)**2).mean(dim = [1, 2, 3])
         
-        # Find index with highest loss
-        index = int(losses.argmax())
+        # Sort indices of losses with lowest loss first
+        loss_indices = list(losses.argsort(descending=False).numpy())
         
         # Reseed highest loss sample
-        sample[index] = seed
+        x0[loss_indices[-1]] = seed
         
-        if regenerate == True and epoch >= n_epochs//2:
+        if regenerate == True and epoch >= 2000:
             
-            # Find indices with lowest loss
-            low_indices = list(losses.topk(3, largest = False)[1])
-            
-            # Disrupt pattern
-            for i in low_indices:
-                sample[i] = create_circular_mask(sample[i], grid_size)
+            # Disrupt pattern for samples with lowest 3 loss
+            for i in loss_indices[:3]:
+                x0[i] = create_circular_mask(x0[i], grid_size)
             
             # if epoch%200 == 0:
             #     plt.imshow(sample_images[[low_indices[0]]][:,:,0])
@@ -62,34 +63,41 @@ def train(model, grid, n_epochs, sample_size = 8, pool_size = 64, regenerate = T
         iterations = np.random.randint(64, 97)
         
         # Run model
-        for t in range(iterations):            
-            sample = model.update(sample)
-            
+        x = x0
+        for _ in range(iterations):            
+            x = model.update(x)
             
         # Pixel-wise L2 loss
-        transformed_img = state_to_image(sample)
+        transformed_img = state_to_image(x)
         
         loss = ((transformed_img - model.target)**2).mean()
-        # Visualise progress
-        if epoch%100 == 0:
-            plt.imshow(transformed_img.detach().numpy()[0])
-            plt.show()
-            print(loss)
+        
             
         model_losses.append(loss.item())
         loss.backward()
+
+        # Normalize gradients
+        for param in model.parameters():
+            param.grad.data = param.grad.data / (torch.norm(param.grad.data) + 1e-8)
+            
         optimizer.step()
         scheduler.step()
         
         # Replace pool with output
-        pool[indices] = sample.detach()
+        pool[indices] = x.detach()
         
-    return model_losses
+        # Visualise progress
+        if epoch%100 == 0:
+            visualize_training(epoch, model_losses, x0, x)
+        #     plt.imshow(transformed_img[0].detach().numpy())
+        #     plt.show()
+        #     print(loss)
         
         
 # Pattern disruption
 def create_circular_mask(grid, grid_size, center_radius = 8):
-    """Returns masked out grid
+    """
+    Returns masked out grid
 
     :param grid: n, 16, 28, 28
     :type grid: Torch tensor
