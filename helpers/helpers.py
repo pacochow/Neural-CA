@@ -15,6 +15,7 @@ import requests
 import matplotlib.pylab as pl
 import glob
 from IPython.display import Image, HTML, clear_output
+import copy
 
 def np2pil(a):
   if a.dtype in [np.float32, np.float64]:
@@ -83,7 +84,7 @@ def to_alpha(x):
 
 def to_rgb(x):
   # assume rgb premultiplied by alpha
-  rgb, a = x[..., :3], to_alpha(x)
+  rgb, a = x[..., :3], to_alpha(x).reshape(..., 1)
   return 1.0-a+rgb
 
 def pad_image(x, grid_size):
@@ -93,11 +94,87 @@ def pad_image(x, grid_size):
     return padded
 
 def state_to_image(state):
-    """ Convert state to image
+  """ 
+  Convert state to image
 
-    :param state: n, 16, 28, 28
-    :type state: Tensor
-    :return: 28x28x4
-    :rtype: Array
-    """
-    return state.permute(0, 2, 3, 1)[..., :4]
+  :param state: n, 16, 28, 28
+  :type state: Torch tensor
+  :return: 28x28x4
+  :rtype: Array
+  """
+  return state.permute(0, 2, 3, 1)[..., :4]
+
+  
+  
+def create_angular_gradient(grid_size, angle):
+  """ 
+  Create grid with angular gradient
+
+  :param grid_size: Grid size
+  :type grid_size: int
+  :param angle: Angle of gradient
+  :type angle: Numpy float
+  :return: Array of grid with gradient values
+  :rtype: Torch tensor
+  """
+  
+  
+  # Convert the angle to radians
+  angle = np.radians(angle)
+
+  # Create a grid of coordinates
+  y, x = np.meshgrid(np.arange(grid_size), np.arange(grid_size))
+
+  # Shift the coordinates so that the origin is at the center of the grid
+  x = x - grid_size / 2
+  y = y - grid_size / 2
+
+  # Rotate the coordinates by the angle
+  x_rot = x * np.cos(angle) + y * np.sin(angle)
+  y_rot = -x * np.sin(angle) + y * np.cos(angle)
+
+  # Create the gradient by normalizing the rotated x-coordinates
+  gradient = (x_rot + grid_size / 2) / grid_size
+
+  return torch.tensor(gradient)
+
+
+def create_circular_gradient(grid_size, circle_center):
+  """
+  Create grid with circular gradient
+
+  :param grid_size: Grid size
+  :type grid_size: int
+  :param circle_center: Circle center coordinates
+  :type circle_center: Tuple
+  :return: Array of grid with gradient values
+  :rtype: Torch tensor
+  """
+  
+  # Create a grid of coordinates
+  y, x = np.ogrid[:grid_size, :grid_size]
+
+  # Compute the distance from the center to each point in the grid
+  dist_from_center = np.sqrt((x - circle_center[0])**2 + (y - circle_center[1])**2)
+
+  # Normalize the distance (this creates the gradient)
+  max_radius = np.sqrt((grid_size-1-circle_center[0])**2 + (grid_size-1-circle_center[1])**2)
+  
+  gradient = dist_from_center / max_radius
+
+  return torch.tensor(gradient)
+
+
+def prune_network(model, threshold):
+  """
+  Prunes a given PyTorch model by setting weights and biases under a given threshold to zero. 
+  Returns new model with pruned parameters.
+  """
+
+  model_copy = copy.deepcopy(model)
+
+  # Prune weights below the threshold
+  for p in model_copy.parameters():
+    p *= (p.abs() >= threshold).float()
+
+  return model_copy
