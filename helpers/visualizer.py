@@ -83,5 +83,6 @@ def visualize_training(epoch, loss, x0, x):
     clear_output(wait=True)  # Clear the previous plots
     plt.tight_layout()
     plt.show()
+    
 
     

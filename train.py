@@ -10,7 +10,6 @@ import cv2
 from tqdm import tqdm
 
 # Get target image
-# target_img = torch.Tensor(cv2.imread('./media/test_img.jpg')) 
 target_emoji = "🦎" #@param {type:"string"}
 img_size = 40
 grid_size = 40
@@ -24,13 +23,14 @@ fire_rate = 0.5
 n_epochs = 8000
 
 # Initialise model and grid
-torch.random.seed()
+torch.manual_seed(0)
 np.random.seed(0)
 model = Standard_CA(target_img, grid_size, num_channels, fire_rate)
+
 grid = Grid(grid_size, num_channels)
 
 # Train model
-train(model, grid, n_epochs, sample_size = 8, pool_size = 1024, regenerate = False)
+train(model, grid, n_epochs, batch_size = 8, pool_size = 1024, regenerate = True)
 
 # Save model
-torch.save(model, "./model_params/model_2.pt")
+torch.save(model, "./model_params/model_3.pt")

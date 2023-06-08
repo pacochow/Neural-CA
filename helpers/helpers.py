@@ -47,18 +47,6 @@ def im2url(a, fmt='jpeg'):
 def imshow(a, fmt='jpeg'):
   display(Image(data=imencode(a, fmt)))
 
-def tile2d(a, w=None):
-  a = np.asarray(a)
-  if w is None:
-    w = int(np.ceil(np.sqrt(len(a))))
-  th, tw = a.shape[1:3]
-  pad = (w-len(a))%w
-  a = np.pad(a, [(0, pad)]+[(0, 0)]*(a.ndim-1), 'constant')
-  h = len(a)//w
-  a = a.reshape([h, w]+list(a.shape[1:]))
-  a = np.rollaxis(a, 2, 1).reshape([th*h, tw*w]+list(a.shape[4:]))
-  return a
-
 def zoom(img, scale=4):
   img = np.repeat(img, scale, 0)
   img = np.repeat(img, scale, 1)
@@ -97,9 +85,9 @@ def state_to_image(state):
   """ 
   Convert state to image
 
-  :param state: n, 16, 28, 28
+  :param state: nx16x28x28
   :type state: Torch tensor
-  :return: 28x28x4
+  :return: nx28x28x4
   :rtype: Array
   """
   return state.permute(0, 2, 3, 1)[..., :4]
