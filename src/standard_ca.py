@@ -50,50 +50,20 @@ class Standard_CA(nn.Module):
         :rtype: torch tensor
         """    
         
-        # Sobel filters
-        sobel_x = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0).float()
-        sobel_y = sobel_x.T
-        
+        identify = np.float32([0, 1, 0])
+        identify = torch.tensor(np.outer(identify, identify))
+        dx = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0)  # Sobel filter
+        dy = dx.T
         angle = torch.tensor(angle)
         c, s = torch.cos(angle), torch.sin(angle)
-        dx = c*sobel_x-s*sobel_y
-        dy = s*sobel_x+c*sobel_y
-        
-        # Stack sobel filters 16 times
-        dx = dx.view(1, 1, 3, 3).repeat(self.num_channels, 1, 1, 1)
-        dy = dy.view(1, 1, 3, 3).repeat(self.num_channels, 1, 1, 1)
-        
-        # Convolve sobel filters
-        with torch.no_grad():
-            grad_x = F.conv2d(state_grid, dx, padding = 'same', groups = self.num_channels)
-            grad_y = F.conv2d(state_grid, dy, padding = 'same', groups = self.num_channels)
-            
-        # Concatenate
-        perception_grid = torch.concat((state_grid, grad_x, grad_y), dim = 1)
-        
-        
-        # # Sobel filters
-        # sobel_x = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0).float()
-        # sobel_y = sobel_x.T
+        kernel_stack = torch.stack([identify, c*dx-s*dy, s*dx+c*dy], 0)
 
-        # angle = torch.tensor(angle)
-        # c, s = torch.cos(angle), torch.sin(angle)
-        # dx = c*sobel_x-s*sobel_y
-        # dy = s*sobel_x+c*sobel_y
+        kernel = kernel_stack.unsqueeze(1)
+        kernel = kernel.repeat(self.num_channels, 1, 1, 1).float()
 
-        # # Stack sobel filters
-        # dx = dx.view(1, 1, 3, 3).repeat(self.num_channels, 1, 1, 1)
-        # dy = dy.view(1, 1, 3, 3).repeat(self.num_channels, 1, 1, 1)
+        state_repeated = state_grid.repeat_interleave(kernel_stack.shape[0],dim = 1)
+        perception_grid = F.conv2d(state_repeated, kernel, padding=1, groups=kernel.size(0))
 
-        # # Concatenate filters along the output channel dimension
-        # filters = torch.cat((dx, dy), dim=0)
-
-        # # Convolve sobel filters
-        # with torch.no_grad():
-        #     gradients = F.conv2d(state_grid.repeat(1, 2, 1, 1), filters, padding = 'same', groups = self.num_channels*2)
-
-        # # Concatenate
-        # perception_grid = torch.cat((state_grid, gradients), dim = 1)
         return perception_grid
 
     def stochastic_update(self, state_grid, ds_grid):
@@ -112,10 +82,11 @@ class Standard_CA(nn.Module):
         size = ds_grid.shape[-1]
         
         # Random mask 
-        rand_mask = (torch.rand(ds_grid.shape[0], 1, size,size)<self.fire_rate)
+        rand_mask = (torch.rand(ds_grid.shape[0], 1, size,size)<=self.fire_rate)
         
         # Apply same random mask to every channel of same position
         rand_mask = rand_mask.repeat(1, self.num_channels, 1, 1)
+        
         # Zero updates for cells that are masked out
         ds_grid = ds_grid*rand_mask.float()
         return state_grid+ds_grid
@@ -137,18 +108,16 @@ class Standard_CA(nn.Module):
             alive = F.max_pool2d(alpha, kernel_size = 3, stride = 1, padding = 1) > 0.1
         return alive.unsqueeze(1)
     
-    def update(self, state_grid, angle = 0.0):
+    def update(self, state_grid, angle = 0.0, step_size = 1.0):
         
         # Pre update life mask
         pre_mask = self.alive_masking(state_grid)
         
-        ds_grid = torch.zeros(self.num_channels, 1, self.grid_size, self.grid_size)
-        
         # Perceive
         perception_grid = self.perceive(state_grid, angle)
-        
+
         # Apply update rule to all cells
-        ds_grid = self.forward(perception_grid)
+        ds_grid = self.forward(perception_grid)*step_size
 
         # Stochastic update mask
         state_grid = self.stochastic_update(state_grid, ds_grid)

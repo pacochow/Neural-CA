@@ -22,8 +22,8 @@ class Grid:
         """ 
         Initialise seed
 
-        :return: n, 16 channels, grid_size, grid_size
-        :rtype: torch tensor
+        :return: 1, 16 channels, grid_size, grid_size
+        :rtype: Torch tensor array 
         """    
         
         self.grid_size = grid_size
@@ -35,21 +35,6 @@ class Grid:
         seed[:, 3:, grid_size//2, grid_size//2] = 1
         
         return seed
-    
-    
-    def init_pool(self, grid_size, pool_size = 1024):
-        """ 
-        Initialise pool
-
-        :return: Pool of seed
-        :rtype: pool_size, 16, grid_size, grid_size
-        """
-        
-        
-        seed = self.init_seed(grid_size)
-        pool = seed.repeat(pool_size, 1, 1, 1)
-        
-        return pool
     
     def run(self, model, iterations, destroy_type, destroy = True, angle = 0.0):
         """ 
