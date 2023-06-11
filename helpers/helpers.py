@@ -87,7 +87,7 @@ def state_to_image(state):
 
   :param state: nx16x28x28
   :type state: Torch tensor
-  :return: nx28x28x4
+  :return: n, 28, 28, 4
   :rtype: Array
   """
   return state.permute(0, 2, 3, 1)[..., :4]
@@ -162,7 +162,18 @@ def prune_network(model, threshold):
   model_copy = copy.deepcopy(model)
 
   # Prune weights below the threshold
-  for p in model_copy.parameters():
-    p *= (p.abs() >= threshold).float()
+  with torch.no_grad():
+    for p in model_copy.parameters():
+      p *= (p.abs() >= threshold).float()
 
   return model_copy
+
+
+def get_parameter_size(model):
+  """
+  Computes number of non-zero parameters
+  """
+  non_zero_params = 0
+  for param in model.parameters():
+    non_zero_params+=(param!=0).sum()
+  return non_zero_params.numpy()
