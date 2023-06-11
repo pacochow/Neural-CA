@@ -12,7 +12,7 @@ from src import grid
 
     
     
-def train(model, grid, n_epochs, batch_size = 8, pool_size = 1024, regenerate = True):
+def train(model, grid, n_epochs, batch_size = 8, pool_size = 1024, regenerate = True, env = None):
     """ 
     Train with pool
     """
@@ -65,8 +65,12 @@ def train(model, grid, n_epochs, batch_size = 8, pool_size = 1024, regenerate = 
         
         # Run model
         x = torch.Tensor(x0)
-        for _ in range(iterations):      
-            x = model.update(x)
+        if env is not None:
+            for _ in range(iterations):
+                x = model.update(x, env)
+        else:
+            for _ in range(iterations):      
+                x = model.update(x)
             
         # Pixel-wise L2 loss
         transformed_img = state_to_image(x)
@@ -97,6 +101,8 @@ def train(model, grid, n_epochs, batch_size = 8, pool_size = 1024, regenerate = 
             visualize_training(epoch, model_losses, torch.tensor(x0), x)
         
     pbar.close()
+    
+    return model_losses
         
 class SamplePool:
     def __init__(self, *, _parent=None, _parent_idx=None, **slots):

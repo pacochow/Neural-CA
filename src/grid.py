@@ -36,7 +36,7 @@ class Grid:
         
         return seed
     
-    def run(self, model, iterations, destroy_type, destroy = True, angle = 0.0):
+    def run(self, model, iterations, destroy_type, destroy = True, angle = 0.0, env = None):
         """ 
         Run model and save state history
         """
@@ -52,7 +52,10 @@ class Grid:
                 state_history[t] = transformed_img.detach().numpy().reshape(self.grid_size, self.grid_size, 4)
                 
                 # Update step
-                state_grid = model.update(state_grid, angle = angle)
+                if env is not None:
+                    state_grid = model.update(state_grid, env, angle = angle)
+                else:
+                    state_grid = model.update(state_grid, angle = angle)
                 
                 # Disrupt pattern
                 if destroy == True and t == iterations//2:
@@ -61,14 +64,43 @@ class Grid:
         return state_history
 
     
-    def init_env(self, env_channels, type, angle = 0, center = (0,0)):
+    def init_env(self, env_channels):
+        """
+        Initialise environment with zeros
+
+        :param env_channels: Number of environment channels
+        :type env_channels: int
+        :return: 1, env_channels, grid_size, grid_size
+        :rtype: torch tensor
+        """
         
-        env = torch.zeros(env_channels, self.grid_size, self.grid_size)
+        env = torch.zeros(1, env_channels, self.grid_size, self.grid_size)
+        return env
+        
+    def add_env(self, env, type = 'linear', channel = 0, angle = 45.0, center = (20,20)):
+        """
+        Add environment
+
+        :param env: 1, env_channels, grid_size, grid_size
+        :type env: torch tensor
+        :param type: Environment type
+        :type type: str
+        :param channel: Channel number
+        :type channel: int
+        :param angle: Angle of gradient, defaults to 0.0
+        :type angle: float, optional
+        :param center: Center of circular gradient, defaults to (20,20)
+        :type center: tuple, optional
+        :return: 1, env_channels, grid_size, grid_size
+        :rtype: torch tensor
+        """
+        
         
         if type == "linear":
-            env[0] = create_angular_gradient(self.grid_size, angle)
+            # Angle of 0 gives 0 to 1 from top to bottom
+            env[:, channel] = create_angular_gradient(self.grid_size, angle)
         elif type == "circle":
-            env[0] = create_circular_gradient(self.grid_size, center)
+            env[:, channel] = create_circular_gradient(self.grid_size, center)
 
             
         return env

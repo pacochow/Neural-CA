@@ -12,8 +12,8 @@ from src import grid
 class Env_CA(nn.Module):
     """
 
-    Input: n,48,grid_size,grid_size
-    Output: n,16,grid_size,grid_size
+    Input: n, 48, grid_size, grid_size
+    Output: n, 16, grid_size, grid_size
     """
     def __init__(self, target, grid_size, model_channels = 16, env_channels = 1, fire_rate = 0.5):
         super(Env_CA, self).__init__()
@@ -51,27 +51,29 @@ class Env_CA(nn.Module):
         :rtype: torch tensor
         """    
         
+        # Identity filter
+        identify = np.float32([0, 1, 0])
+        identify = torch.tensor(np.outer(identify, identify))
+        
         # Sobel filters
-        sobel_x = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0).float()
-        sobel_y = sobel_x.T
+        dx = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0)  # Sobel filter
+        dy = dx.T
         
         angle = torch.tensor(angle)
         c, s = torch.cos(angle), torch.sin(angle)
-        dx = c*sobel_x-s*sobel_y
-        dy = s*sobel_x+c*sobel_y
         
-        # Stack sobel filters 16 times
-        dx = dx.view(1, 1, 3, 3).repeat(self.num_channels, 1, 1, 1)
-        dy = dy.view(1, 1, 3, 3).repeat(self.num_channels, 1, 1, 1)
+        # Stack filters together
+        kernel_stack = torch.stack([identify, c*dx-s*dy, s*dx+c*dy], 0)
+        kernel = kernel_stack.unsqueeze(1)
         
-        # Convolve sobel filters
-        with torch.no_grad():
-            grad_x = F.conv2d(state_grid, dx, padding = 1, groups = self.num_channels)
-            grad_y = F.conv2d(state_grid, dy, padding = 1, groups = self.num_channels)
+        # Repeat kernels to form num_channels x 1 x 3 x 3 filter
+        kernel = kernel.repeat(self.num_channels, 1, 1, 1).float()
+
+        state_repeated = state_grid.repeat_interleave(kernel_stack.shape[0],dim = 1)
         
-        # Concatenate
-        perception_grid = torch.concat((state_grid, grad_x, grad_y), dim = 1)
-        
+        # Perform convolution
+        perception_grid = F.conv2d(state_repeated, kernel, padding=1, groups=kernel.size(0))
+
         return perception_grid
 
     def stochastic_update(self, state_grid, ds_grid):
@@ -89,7 +91,7 @@ class Env_CA(nn.Module):
         size = ds_grid.shape[-1]
         
         # Random mask 
-        rand_mask = (torch.rand(ds_grid.shape[0], 1, size,size)<self.fire_rate)
+        rand_mask = (torch.rand(ds_grid.shape[0], 1, size,size)<=self.fire_rate)
         
         # Apply same random mask to every channel of same position
         rand_mask = rand_mask.repeat(1, self.model_channels, 1, 1)
@@ -120,9 +122,8 @@ class Env_CA(nn.Module):
         # Pre update life mask
         pre_mask = self.alive_masking(state_grid)
         
-        ds_grid = torch.zeros(self.model_channels, 1, self.grid_size, self.grid_size)
-        
-        # Perceive       
+        # Perceive
+        env = env.repeat(state_grid.shape[0], 1, 1, 1)      
         full_grid = torch.cat([state_grid,env], dim = 1)
         
         perception_grid = self.perceive(full_grid, angle)

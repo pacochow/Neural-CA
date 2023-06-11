@@ -1,4 +1,4 @@
-from src.standard_ca import *
+from src.env_ca import *
 from src.train_utils import train
 from src.grid import *
 from helpers.helpers import * 
@@ -19,19 +19,25 @@ target_img = pad_image(img, grid_size)
 
 # Parameters
 model_channels = 16
+env_channels = 2
 fire_rate = 0.5
 n_epochs = 8000
 
 # Initialise model and grid
 torch.manual_seed(0)
 np.random.seed(0)
-model = Standard_CA(target_img, grid_size, model_channels, fire_rate)
+model = Env_CA(target_img, grid_size, model_channels, env_channels, fire_rate)
 
 grid = Grid(grid_size, model_channels)
 
+# Initialise environment
+env = grid.init_env(env_channels)
+env = grid.add_env(env, "linear", channel = 0)
+env = grid.add_env(env, "circle", channel = 1)
+
 # Train model
-model_losses = train(model, grid, n_epochs, batch_size = 8, pool_size = 1024, regenerate = True)
+model_losses = train(model, grid, n_epochs, batch_size = 8, pool_size = 1024, regenerate = True, env = env)
 
 # Save model
-torch.save(model, "./model_params/standard_model.pt")
-torch.save(model_losses, "./model_params/standard_model_losses.pt")
+torch.save(model, "./model_params/env_model_2.pt")
+torch.save(model_losses, "./model_params/env_model_2_losses.pt")

@@ -12,24 +12,24 @@ from src import grid
 class Standard_CA(nn.Module):
     """
 
-    Input: n,48,grid_size,grid_size
-    Output: n,16,grid_size,grid_size
+    Input: n, 48, grid_size, grid_size
+    Output: n, 16, grid_size, grid_size
     """
-    def __init__(self, target, grid_size, num_channels = 16, fire_rate = 0.5):
+    def __init__(self, target, grid_size, model_channels = 16, fire_rate = 0.5):
         super(Standard_CA, self).__init__()
         
         self.target = torch.tensor(target)
         self.grid_size = grid_size
-        self.num_channels = num_channels
+        self.model_channels = model_channels
         self.fire_rate = fire_rate
     
-        self.input_dim = self.num_channels*3
+        self.input_dim = self.model_channels*3
         
         # Update network
         self.conv1 = nn.Conv2d(self.input_dim, 128, 1)
         nn.init.xavier_uniform_(self.conv1.weight)
         nn.init.zeros_(self.conv1.bias)
-        self.conv2 = nn.Conv2d(128, self.num_channels, 1)
+        self.conv2 = nn.Conv2d(128, self.model_channels, 1)
         self.relu = nn.ReLU()
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
@@ -50,18 +50,26 @@ class Standard_CA(nn.Module):
         :rtype: torch tensor
         """    
         
+        # Identity filter
         identify = np.float32([0, 1, 0])
         identify = torch.tensor(np.outer(identify, identify))
+        
+        # Sobel filters 
         dx = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0)  # Sobel filter
         dy = dx.T
         angle = torch.tensor(angle)
         c, s = torch.cos(angle), torch.sin(angle)
+        
+        # Stack filters together
         kernel_stack = torch.stack([identify, c*dx-s*dy, s*dx+c*dy], 0)
-
         kernel = kernel_stack.unsqueeze(1)
-        kernel = kernel.repeat(self.num_channels, 1, 1, 1).float()
+        
+        # Repeat kernels to form num_channels x 1 x 3 x 3 filter
+        kernel = kernel.repeat(self.model_channels, 1, 1, 1).float()
 
         state_repeated = state_grid.repeat_interleave(kernel_stack.shape[0],dim = 1)
+        
+        # Perform convolution
         perception_grid = F.conv2d(state_repeated, kernel, padding=1, groups=kernel.size(0))
 
         return perception_grid
@@ -85,10 +93,10 @@ class Standard_CA(nn.Module):
         rand_mask = (torch.rand(ds_grid.shape[0], 1, size,size)<=self.fire_rate)
         
         # Apply same random mask to every channel of same position
-        rand_mask = rand_mask.repeat(1, self.num_channels, 1, 1)
+        rand_mask = rand_mask.repeat(1, self.model_channels, 1, 1)
         
         # Zero updates for cells that are masked out
-        ds_grid = ds_grid*rand_mask.float()
+        ds_grid = ds_grid*rand_mask
         return state_grid+ds_grid
 
     def alive_masking(self, state_grid):
@@ -128,7 +136,7 @@ class Standard_CA(nn.Module):
         life_mask = pre_mask & post_mask
         
         # Zero out dead cells
-        state_grid = life_mask.float()*state_grid
+        state_grid = life_mask*state_grid
         
         return state_grid
     
