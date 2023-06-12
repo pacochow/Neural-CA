@@ -1,11 +1,5 @@
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import matplotlib.pyplot as plt
-import cv2
-from tqdm import tqdm
 from helpers.helpers import *
 from src.train_utils import create_block_mask
 
@@ -18,7 +12,7 @@ class Grid:
         self.num_channels = model_channels+env_channels
     
     
-    def init_seed(self, grid_size):
+    def init_seed(self, grid_size: int):
         """ 
         Initialise seed
 
@@ -36,7 +30,7 @@ class Grid:
         
         return seed
     
-    def run(self, model, iterations, destroy_type, destroy = True, angle = 0.0, env = None):
+    def run(self, model, iterations: int, destroy_type: int, destroy = True, angle = 0.0, env = None):
         """ 
         Run model and save state history
         """
@@ -64,7 +58,7 @@ class Grid:
         return state_history
 
     
-    def init_env(self, env_channels):
+    def init_env(self, env_channels: int):
         """
         Initialise environment with zeros
 
@@ -77,7 +71,7 @@ class Grid:
         env = torch.zeros(1, env_channels, self.grid_size, self.grid_size)
         return env
         
-    def add_env(self, env, type = 'linear', channel = 0, angle = 45.0, center = (20,20)):
+    def add_env(self, env: torch.Tensor, type = 'linear', channel = 0, angle = 45.0, center = (20,20)):
         """
         Add environment
 

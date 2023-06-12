@@ -1,18 +1,13 @@
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
-import matplotlib.pyplot as plt
-import cv2
 from tqdm import tqdm
 from helpers.helpers import *
-from helpers.visualizer import visualize_training
-from src import grid
+from helpers.visualizer import *
 
     
     
-def train(model, grid, n_epochs, batch_size = 8, pool_size = 1024, regenerate = True, env = None):
+def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size = 8, pool_size = 1024, regenerate = True, env = None):
     """ 
     Train with pool
     """
@@ -99,10 +94,19 @@ def train(model, grid, n_epochs, batch_size = 8, pool_size = 1024, regenerate = 
         pbar.update()
         if epoch%100 == 0:
             visualize_training(epoch, model_losses, torch.tensor(x0), x)
+           
+        # Save progress 
+        if epoch in [100, 500, 1000, 4000]:
+            torch.save(model, f'model_params/{model_name}/{epoch}.pt')
         
     pbar.close()
     
-    return model_losses
+    # Save model 
+    torch.save(model, f"./model_params/{model_name}/final_weights.pt")
+    torch.save(model_losses, f"./model_params/{model_name}/losses.pt")
+
+    # Save loss plot
+    save_loss_plot(n_epochs+1, model_losses, f"./model_params/{model_name}/loss.png")
         
 class SamplePool:
     def __init__(self, *, _parent=None, _parent_idx=None, **slots):
@@ -128,7 +132,7 @@ class SamplePool:
 
         
 # Pattern disruption
-def create_circular_mask(grid, grid_size, center_radius = 8):
+def create_circular_mask(grid, grid_size: int, center_radius = 8):
     """
     Returns masked out grid
 
@@ -153,7 +157,7 @@ def create_circular_mask(grid, grid_size, center_radius = 8):
     grid = grid*(1-mask)
     return grid
 
-def create_block_mask(grid, grid_size, type, mask_size = 4):
+def create_block_mask(grid, grid_size: int, type: int, mask_size = 4):
     """Returns masked out grid
     """
     

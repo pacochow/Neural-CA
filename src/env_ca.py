@@ -2,26 +2,25 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-import matplotlib.pyplot as plt
-import cv2
-from tqdm import tqdm
 from helpers.helpers import *
-from src import grid
 
 class Env_CA(nn.Module):
     """
-
     Input: n, 48, grid_size, grid_size
     Output: n, 16, grid_size, grid_size
     """
-    def __init__(self, target, grid_size, model_channels = 16, env_channels = 1, fire_rate = 0.5):
+    def __init__(self, target: np.ndarray, grid_size: int, model_channels = 16, env_channels = 1, fire_rate = 0.5):
         super(Env_CA, self).__init__()
         
         self.target = torch.tensor(target)
         self.grid_size = grid_size
         self.model_channels = model_channels
         self.env_channels = env_channels
+        
+        if env_channels > 0:
+            self.env = True
+        else:
+            self.env = False
         self.fire_rate = fire_rate
     
         self.num_channels = model_channels + env_channels
@@ -36,18 +35,19 @@ class Env_CA(nn.Module):
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         out = self.relu(self.conv1(x))
         out = self.conv2(out)
         
         return out
 
-    def perceive(self, state_grid, angle = 0.0):
-        """ Compute perception vectors
+    def perceive(self, state_grid: torch.Tensor, angle = 0.0):
+        """ 
+        Compute perception vectors
 
-        :param state_grid: n, 17, grid_size, grid_size
+        :param state_grid: n, num_channels, grid_size, grid_size
         :type state_grid: torch tensor
-        :return: n, 51, grid_size, grid_size
+        :return: n, input_dim, grid_size, grid_size
         :rtype: torch tensor
         """    
         
@@ -76,8 +76,9 @@ class Env_CA(nn.Module):
 
         return perception_grid
 
-    def stochastic_update(self, state_grid, ds_grid):
-        """ Apply stochastic mask so that all cells do not update together.
+    def stochastic_update(self, state_grid: torch.Tensor, ds_grid: torch.Tensor):
+        """ 
+        Apply stochastic mask so that all cells do not update together.
 
         :param state_grid: n,16,grid_size,grid_size
         :type state_grid: torch tensor
@@ -100,7 +101,7 @@ class Env_CA(nn.Module):
         ds_grid = ds_grid*rand_mask
         return state_grid+ds_grid
 
-    def alive_masking(self, state_grid):
+    def alive_masking(self, state_grid: torch.Tensor):
         """ Returns mask for dead cells
         
         :param state_grid: n,17,grid_size,grid_size
@@ -117,16 +118,18 @@ class Env_CA(nn.Module):
 
         return alive.unsqueeze(1)
     
-    def update(self, state_grid, env, angle = 0.0):
+    def update(self, state_grid: torch.Tensor, env = None, angle = 0.0):
         
         # Pre update life mask
         pre_mask = self.alive_masking(state_grid)
         
         # Perceive
-        env = env.repeat(state_grid.shape[0], 1, 1, 1)      
-        full_grid = torch.cat([state_grid,env], dim = 1)
-        
-        perception_grid = self.perceive(full_grid, angle)
+        if self.env == True:
+            env = env.repeat(state_grid.shape[0], 1, 1, 1)      
+            full_grid = torch.cat([state_grid,env], dim = 1)
+            perception_grid = self.perceive(full_grid, angle)
+        else: 
+            perception_grid = self.perceive(state_grid, angle)
         
         # Apply update rule to all cells
         ds_grid = self.forward(perception_grid)

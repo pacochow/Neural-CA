@@ -75,13 +75,13 @@ def to_rgb(x):
   rgb, a = x[..., :3], to_alpha(x).reshape(..., 1)
   return 1.0-a+rgb
 
-def pad_image(x, grid_size):
+def pad_image(x: np.ndarray, grid_size: int):
     img_size = x.shape[0]
     pad = (grid_size-img_size)//2
     padded = np.pad(x, ((pad, pad), (pad, pad), (0, 0)))
     return padded
 
-def state_to_image(state):
+def state_to_image(state: torch.Tensor):
   """ 
   Convert state to image
 
@@ -94,7 +94,7 @@ def state_to_image(state):
 
   
   
-def create_angular_gradient(grid_size, angle):
+def create_angular_gradient(grid_size: int, angle: float):
   """ 
   Create grid with angular gradient
 
@@ -127,7 +127,7 @@ def create_angular_gradient(grid_size, angle):
   return torch.tensor(gradient)
 
 
-def create_circular_gradient(grid_size, circle_center):
+def create_circular_gradient(grid_size: int, circle_center: tuple):
   """
   Create grid with circular gradient
 
