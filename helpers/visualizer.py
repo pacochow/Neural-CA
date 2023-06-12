@@ -1,6 +1,4 @@
-import random
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
@@ -66,12 +64,16 @@ def create_progress_animation(states: np.ndarray, iterations: int, nSeconds: int
     # Clip values between 0 and 1
     states = states.clip(0, 1)
     
+    # Titles
+    titles = [100, 500, 1000, 4000]
+    
     # Create an array to hold your image objects
     ims = []
     for j in range(4):  # loop over your new dimension
         a = states[j, 0]  # the initial state for each animation
         im = axs[j].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
         axs[j].axis('off')
+        axs[j].set_title(titles[j])
         ims.append(im)
 
     def animate_func(i):

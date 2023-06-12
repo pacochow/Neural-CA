@@ -1,21 +1,11 @@
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import matplotlib.pyplot as plt
-import cv2
-import os
 import io
 import PIL.Image, PIL.ImageDraw
 import base64
-import zipfile
-import json
 import requests
-import matplotlib.pylab as pl
-import glob
-from IPython.display import Image, HTML, clear_output
-import copy
+from IPython.display import Image
+
 
 def np2pil(a):
   if a.dtype in [np.float32, np.float64]:
@@ -81,7 +71,7 @@ def pad_image(x: np.ndarray, grid_size: int):
     padded = np.pad(x, ((pad, pad), (pad, pad), (0, 0)))
     return padded
 
-def state_to_image(state: torch.Tensor):
+def state_to_image(state: torch.Tensor) -> torch.Tensor:
   """ 
   Convert state to image
 
@@ -94,7 +84,7 @@ def state_to_image(state: torch.Tensor):
 
   
   
-def create_angular_gradient(grid_size: int, angle: float):
+def create_angular_gradient(grid_size: int, angle: float) -> torch.Tensor:
   """ 
   Create grid with angular gradient
 
@@ -127,7 +117,7 @@ def create_angular_gradient(grid_size: int, angle: float):
   return torch.tensor(gradient)
 
 
-def create_circular_gradient(grid_size: int, circle_center: tuple):
+def create_circular_gradient(grid_size: int, circle_center: tuple) -> torch.Tensor:
   """
   Create grid with circular gradient
 
@@ -151,29 +141,3 @@ def create_circular_gradient(grid_size: int, circle_center: tuple):
   gradient = dist_from_center / max_radius
 
   return torch.tensor(gradient)
-
-
-def prune_network(model, threshold):
-  """
-  Prunes a given PyTorch model by setting weights and biases under a given threshold to zero. 
-  Returns new model with pruned parameters.
-  """
-
-  model_copy = copy.deepcopy(model)
-
-  # Prune weights below the threshold
-  with torch.no_grad():
-    for p in model_copy.parameters():
-      p *= (p.abs() >= threshold).float()
-
-  return model_copy
-
-
-def get_parameter_size(model):
-  """
-  Computes number of non-zero parameters
-  """
-  non_zero_params = 0
-  for param in model.parameters():
-    non_zero_params+=(param!=0).sum()
-  return non_zero_params.numpy()
