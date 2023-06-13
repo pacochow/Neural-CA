@@ -2,33 +2,42 @@ from helpers.helpers import *
 import torch   
 from src.standard_ca import *
 from src.grid import *
+from src.pruning import *
 from helpers.visualizer import create_animation
+from helpers.visualizer import visualize_pruning
 
-
-grid_size = 40
 iterations = 400
+nSeconds = 10
 angle = 0.0
 
 
 # Load model
-model = torch.load("./model_params/env_model.pt")
-print(get_parameter_size(model))
+model_name = 'standard_16'
+model = torch.load(f"./models/{model_name}/final_weights.pt")
 
-# Prune model
-pruned_model = prune_network(model, threshold = 0.05)
-print(get_parameter_size(pruned_model))
 
 # Initialise grid
-grid = Grid(grid_size, pruned_model.model_channels)
+grid_size = model.grid_size
+grid = Grid(grid_size, model.model_channels)
 
 # Initialise environment
-env = grid.init_env(model.env_channels)
-env = grid.add_env(env, "linear")
+env = None
+# env = grid.init_env(model.env_channels)
+# env = grid.add_env(env, "circle", 0)
 
-# Run model
-state_history = grid.run(pruned_model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+# Visualise progress animation
+filename = f"./models/{model_name}/pruned_visualization.mp4"
+visualize_pruning(model_name, grid, iterations, nSeconds, filename = filename, angle = angle, env = env)
 
-# Create animation
-nSeconds = 10
-filename = './media/pruned_run.mp4'
-create_animation(state_history, iterations, nSeconds, filename)
+
+
+# # Prune model
+# percent = 23
+# model_size, pruned_size, pruned_model = prune_by_percent(model, percent=percent)
+
+# # Run model
+# state_history = grid.run(pruned_model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+
+# # Create animation
+# filename = f"./models/{model_name}/pruned_run.mp4"
+# create_animation(state_history, iterations, nSeconds, filename)

@@ -41,7 +41,7 @@ class Env_CA(nn.Module):
         
         return out
 
-    def perceive(self, state_grid: torch.Tensor, angle = 0.0):
+    def perceive(self, state_grid: torch.Tensor, angle = 0.0) -> torch.Tensor:
         """ 
         Compute perception vectors
 
@@ -76,7 +76,7 @@ class Env_CA(nn.Module):
 
         return perception_grid
 
-    def stochastic_update(self, state_grid: torch.Tensor, ds_grid: torch.Tensor):
+    def stochastic_update(self, state_grid: torch.Tensor, ds_grid: torch.Tensor) -> torch.Tensor:
         """ 
         Apply stochastic mask so that all cells do not update together.
 
@@ -101,7 +101,7 @@ class Env_CA(nn.Module):
         ds_grid = ds_grid*rand_mask
         return state_grid+ds_grid
 
-    def alive_masking(self, state_grid: torch.Tensor):
+    def alive_masking(self, state_grid: torch.Tensor) -> torch.Tensor:
         """ Returns mask for dead cells
         
         :param state_grid: n,17,grid_size,grid_size
@@ -118,7 +118,7 @@ class Env_CA(nn.Module):
 
         return alive.unsqueeze(1)
     
-    def update(self, state_grid: torch.Tensor, env = None, angle = 0.0):
+    def update(self, state_grid: torch.Tensor, env = None, angle = 0.0) -> torch.Tensor:
         
         # Pre update life mask
         pre_mask = self.alive_masking(state_grid)

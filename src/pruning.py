@@ -34,6 +34,7 @@ def prune_by_percent(model: nn.Module, percent: float):
     finished = False
     model_size = get_parameter_size(model)
     tolerance = 100
+    desired_size = model_size*(100-percent)/100
     
     lower_bound = 0.001
     upper_bound = 0.5
@@ -43,19 +44,20 @@ def prune_by_percent(model: nn.Module, percent: float):
         
         # Prune model based on guessed threshold
         pruned_model = prune_network(model, threshold = guess)
-        
         # Calculate size of pruned model
         pruned_size = get_parameter_size(pruned_model)
-        
         # If pruned model size is not within tolerance, update guess
-        if model_size*(100-percent)/100 - tolerance <= pruned_size <= model_size*(100-percent)/100 + tolerance:  
+        if desired_size - tolerance <= pruned_size <= desired_size + tolerance:  
             finished = True
         else:
-            if pruned_size < model_size*(100-percent)/100:
-                lower_bound += 0.1
+            # Apply binary search algorithm
+            diff = np.abs(desired_size - pruned_size)
+            if pruned_size < desired_size:
+                upper_bound -= 0.1 * diff/desired_size
             else:
-                upper_bound -= 0.1
+                lower_bound += 0.1 * diff/desired_size
             
             guess = (lower_bound+upper_bound)/2
-            
-    return pruned_model
+    pruned_percentage = (model_size - pruned_size)*100/model_size
+    # print(f'Pruning completed! {pruned_percentage:.2f}% of the model was pruned.\n')
+    return model_size, pruned_size, pruned_model

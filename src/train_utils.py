@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from helpers.helpers import *
@@ -97,16 +98,16 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size = 8
            
         # Save progress 
         if epoch in [100, 500, 1000, 4000]:
-            torch.save(model, f'model_params/{model_name}/{epoch}.pt')
+            torch.save(model, f'models/{model_name}/{epoch}.pt')
         
     pbar.close()
     
     # Save model 
-    torch.save(model, f"./model_params/{model_name}/final_weights.pt")
-    torch.save(model_losses, f"./model_params/{model_name}/losses.pt")
+    torch.save(model, f"./models/{model_name}/final_weights.pt")
+    torch.save(model_losses, f"./models/{model_name}/losses.pt")
 
     # Save loss plot
-    save_loss_plot(n_epochs+1, model_losses, f"./model_params/{model_name}/loss.png")
+    save_loss_plot(n_epochs+1, model_losses, f"./models/{model_name}/loss.png")
         
 class SamplePool:
     def __init__(self, *, _parent=None, _parent_idx=None, **slots):

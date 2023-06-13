@@ -4,6 +4,8 @@ import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
 from IPython.display import clear_output
 from helpers.helpers import *
+from src.pruning import *
+
 
 def create_animation(states: np.ndarray, iterations: int, nSeconds: int, filename: str):
 
@@ -35,7 +37,7 @@ def create_animation(states: np.ndarray, iterations: int, nSeconds: int, filenam
 
     anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
 
-    print('Full run done!')
+    print(' Full run done!')
     
 
 def load_progress_states(model_name: str, grid, iterations: int, grid_size: int, angle = 0, env = None):
@@ -49,8 +51,7 @@ def load_progress_states(model_name: str, grid, iterations: int, grid_size: int,
     # Loop over all saved epochs and run model
     saved_epochs = [100, 500, 1000, 4000]
     for i in range(len(saved_epochs)):
-        model = torch.load(f"./model_params/{model_name}/{saved_epochs[i]}.pt")
-        model.env = True
+        model = torch.load(f"./models/{model_name}/{saved_epochs[i]}.pt")
         states[i] = grid.run(model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
     
     return states
@@ -73,8 +74,10 @@ def create_progress_animation(states: np.ndarray, iterations: int, nSeconds: int
         a = states[j, 0]  # the initial state for each animation
         im = axs[j].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
         axs[j].axis('off')
-        axs[j].set_title(titles[j])
+        axs[j].set_title(titles[j], fontsize = 40)
         ims.append(im)
+    
+    plt.tight_layout()
 
     def animate_func(i):
         if i % fps == 0:
@@ -94,9 +97,75 @@ def create_progress_animation(states: np.ndarray, iterations: int, nSeconds: int
 
     anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
 
-    print('Progress animation done!')
+    print(' Progress animation done!')
 
+def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, filename: str, angle = 0, env = None):
     
+    model = torch.load(f"./models/{model_name}/final_weights.pt")
+    
+    grid_size = model.grid_size
+    
+    states = np.zeros((6, iterations, grid_size, grid_size, 4))
+    
+    # Run model without pruning
+    states[0] = grid.run(model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+    
+    # Run model after pruning each percent
+    percents = [5, 10, 15, 20, 25]
+    pruned_percents = [0]
+    for i in range(len(percents)):
+        
+        # Prune model
+        model_size, pruned_size, pruned_model = prune_by_percent(model, percent=percents[i])
+        
+        # Compute pruned percentages
+        pruned_percentage = (model_size - pruned_size)*100/model_size
+        pruned_percents.append(pruned_percentage)
+        
+        # Run model
+        states[i+1] = grid.run(pruned_model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+        
+    fps = iterations/nSeconds
+
+    # First set up the figure, the axis, and the plot elements we want to animate
+    fig, axs = plt.subplots(nrows=1, ncols=6, figsize=(48,8))  # 6 subplots for 6 animations
+    
+    # Clip values between 0 and 1
+    states = states.clip(0, 1)
+    
+    # Titles
+    titles = [f"{pruned_percents[i]:.2f}%" for i in range(len(pruned_percents))]
+    
+    # Create an array to hold your image objects
+    ims = []
+    for j in range(6):  # loop over your new dimension
+        a = states[j, 0]  # the initial state for each animation
+        im = axs[j].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
+        axs[j].axis('off')
+        axs[j].set_title(titles[j], fontsize = 30)
+        ims.append(im)
+        
+    plt.tight_layout()
+
+    def animate_func(i):
+        if i % fps == 0:
+            print('.', end ='')
+        
+        for j in range(6):  # loop over your new dimension
+            ims[j].set_array(states[j, i])  # update each animation
+
+        return ims
+
+    anim = animation.FuncAnimation(
+        fig, 
+        animate_func, 
+        frames = iterations,
+        interval = 1000 / fps, # in ms
+        )
+
+    anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
+
+    print(' Pruning animation done!')
     
 
 def plot_log_loss(ax, epoch, loss):

@@ -12,7 +12,7 @@ class Grid:
         self.num_channels = model_channels+env_channels
     
     
-    def init_seed(self, grid_size: int):
+    def init_seed(self, grid_size: int) -> torch.Tensor:
         """ 
         Initialise seed
 
@@ -30,7 +30,7 @@ class Grid:
         
         return seed
     
-    def run(self, model, iterations: int, destroy_type: int, destroy = True, angle = 0.0, env = None):
+    def run(self, model, iterations: int, destroy_type: int, destroy = True, angle = 0.0, env = None) -> np.ndarray:
         """ 
         Run model and save state history
         """
@@ -46,11 +46,8 @@ class Grid:
                 state_history[t] = transformed_img.detach().numpy().reshape(self.grid_size, self.grid_size, 4)
                 
                 # Update step
-                if env is not None:
-                    state_grid = model.update(state_grid, env, angle = angle)
-                else:
-                    state_grid = model.update(state_grid, angle = angle)
-                
+                state_grid = model.update(state_grid, env, angle = angle)
+        
                 # Disrupt pattern
                 if destroy == True and t == iterations//2:
                     state_grid = create_block_mask(state_grid, self.grid_size, type = destroy_type)
@@ -58,7 +55,7 @@ class Grid:
         return state_history
 
     
-    def init_env(self, env_channels: int):
+    def init_env(self, env_channels: int) -> torch.Tensor:
         """
         Initialise environment with zeros
 
@@ -71,7 +68,7 @@ class Grid:
         env = torch.zeros(1, env_channels, self.grid_size, self.grid_size)
         return env
         
-    def add_env(self, env: torch.Tensor, type = 'linear', channel = 0, angle = 45.0, center = (20,20)):
+    def add_env(self, env: torch.Tensor, type = 'linear', channel = 0, angle = 45.0, center = (20,20)) -> torch.Tensor:
         """
         Add environment
 
