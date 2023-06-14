@@ -8,7 +8,7 @@ from helpers.visualizer import *
 
     
     
-def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size = 8, pool_size = 1024, regenerate = True, env = None):
+def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: int = 8, pool_size: int = 1024, regenerate: bool = True, env: torch.Tensor = None):
     """ 
     Train with pool
     """
@@ -22,7 +22,6 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size = 8
     # Initialise pool
     seed = grid.init_seed(grid_size).numpy()
     pool = np.repeat(seed, pool_size, axis = 0)
-    # pool = SamplePool(x=np.repeat(seed, pool_size, 0))
     
     model_losses = []
     
@@ -34,8 +33,6 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size = 8
         # Sample from pool
         
         # Select indices from pool
-        # batch = pool.sample(batch_size)
-        # x0 = batch.x
         indices = np.random.randint(pool_size, size = batch_size)
         x0 = pool[indices]
         
@@ -86,8 +83,6 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size = 8
         scheduler.step()
         
         # Replace pool with output
-        # batch.x[:] = x.detach().numpy()
-        # batch.commit()
         pool[indices] = x.detach()
         
         # Visualise progress
@@ -108,32 +103,10 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size = 8
 
     # Save loss plot
     save_loss_plot(n_epochs+1, model_losses, f"./models/{model_name}/loss.png")
-        
-class SamplePool:
-    def __init__(self, *, _parent=None, _parent_idx=None, **slots):
-        self._parent = _parent
-        self._parent_idx = _parent_idx
-        self._slot_names = slots.keys()
-        self._size = None
-        for k, v in slots.items():
-            if self._size is None:
-                self._size = len(v)
-            assert self._size == len(v)
-            setattr(self, k, np.asarray(v))
-
-    def sample(self, n):
-        idx = np.random.choice(self._size, n, False)
-        batch = {k: getattr(self, k)[idx] for k in self._slot_names}
-        batch = SamplePool(**batch, _parent=self, _parent_idx=idx)
-        return batch
-
-    def commit(self):
-        for k in self._slot_names:
-            getattr(self._parent, k)[self._parent_idx] = getattr(self, k)
-
+    
         
 # Pattern disruption
-def create_circular_mask(grid, grid_size: int, center_radius = 8):
+def create_circular_mask(grid, grid_size: int, center_radius: float = 8.0):
     """
     Returns masked out grid
 
@@ -141,7 +114,7 @@ def create_circular_mask(grid, grid_size: int, center_radius = 8):
     :type grid: Numpy array
     :type grid_size: int
     :param center_radius: Radius of where center of mask is located, defaults to 8
-    :type center_radius: int, optional
+    :type center_radius: float, optional
     :return: Masked out grid
     :rtype: Numpy array
     """
@@ -158,8 +131,9 @@ def create_circular_mask(grid, grid_size: int, center_radius = 8):
     grid = grid*(1-mask)
     return grid
 
-def create_block_mask(grid, grid_size: int, type: int, mask_size = 4):
-    """Returns masked out grid
+def create_block_mask(grid, grid_size: int, type: int, mask_size: float = 4.0):
+    """
+    Returns masked out grid
     """
     
     

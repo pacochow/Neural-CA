@@ -113,8 +113,8 @@ class Env_CA(nn.Module):
         # Max pool to find cells with alive neighbours
         
         alpha = state_grid[:,3,:,:]
-        with torch.no_grad():
-            alive = F.max_pool2d(alpha, kernel_size = 3, stride = 1, padding = 1) > 0.1
+        
+        alive = F.max_pool2d(alpha, kernel_size = 3, stride = 1, padding = 1) > 0.1
 
         return alive.unsqueeze(1)
     

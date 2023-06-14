@@ -92,7 +92,7 @@ def create_angular_gradient(grid_size: int, angle: float) -> torch.Tensor:
   :type grid_size: int
   :param angle: Angle of gradient
   :type angle: Numpy float
-  :return: Array of grid with gradient values
+  :return: grid_size, grid_size
   :rtype: Torch tensor
   """
   
@@ -117,27 +117,39 @@ def create_angular_gradient(grid_size: int, angle: float) -> torch.Tensor:
   return torch.tensor(gradient)
 
 
-def create_circular_gradient(grid_size: int, circle_center: tuple) -> torch.Tensor:
-  """
-  Create grid with circular gradient
+import numpy as np
+import torch
 
-  :param grid_size: Grid size
-  :type grid_size: int
-  :param circle_center: Circle center coordinates
-  :type circle_center: Tuple
-  :return: Array of grid with gradient values
-  :rtype: Torch tensor
-  """
-  
-  # Create a grid of coordinates
-  y, x = np.ogrid[:grid_size, :grid_size]
+def create_circular_gradient(grid_size: int, circle_center: tuple, circle_radius: float = None) -> torch.Tensor:
+    """
+    Create grid with circular gradient. 1 in the center and 0 on the outside.
 
-  # Compute the distance from the center to each point in the grid
-  dist_from_center = np.sqrt((x - circle_center[0])**2 + (y - circle_center[1])**2)
+    :param grid_size: Grid size
+    :type grid_size: int
+    :param circle_center: Circle center coordinates
+    :type circle_center: Tuple
+    :param circle_radius: Circle radius (default is maximum possible radius)
+    :type circle_radius: float
+    :return: grid_size, grid_size
+    :rtype: Torch tensor
+    """
+    
+    # Create a grid of coordinates
+    y, x = np.ogrid[:grid_size, :grid_size]
 
-  # Normalize the distance (this creates the gradient)
-  max_radius = np.sqrt((grid_size-1-circle_center[0])**2 + (grid_size-1-circle_center[1])**2)
-  
-  gradient = dist_from_center / max_radius
+    # Compute the distance from the center to each point in the grid
+    dist_from_center = np.sqrt((x - circle_center[0])**2 + (y - circle_center[1])**2)
 
-  return torch.tensor(gradient)
+    # If no specific circle_radius, normalize by the maximum possible radius
+    if circle_radius is None:
+        circle_radius = np.sqrt((grid_size-1-circle_center[0])**2 + (grid_size-1-circle_center[1])**2)
+
+    # Create initial gradient
+    gradient = dist_from_center / circle_radius
+
+    # Clip values outside the circle to 1
+    gradient[dist_from_center > circle_radius] = 1.0
+
+    return 1-torch.tensor(gradient)
+
+

@@ -5,6 +5,7 @@ import matplotlib.gridspec as gridspec
 from IPython.display import clear_output
 from helpers.helpers import *
 from src.pruning import *
+from tqdm import tqdm
 
 
 def create_animation(states: np.ndarray, iterations: int, nSeconds: int, filename: str):
@@ -40,7 +41,7 @@ def create_animation(states: np.ndarray, iterations: int, nSeconds: int, filenam
     print(' Full run done!')
     
 
-def load_progress_states(model_name: str, grid, iterations: int, grid_size: int, angle = 0, env = None):
+def load_progress_states(model_name: str, grid, iterations: int, grid_size: int, angle: float = 0.0, env = None):
     """
     Create array of models run at each saved epoch
     """
@@ -99,75 +100,6 @@ def create_progress_animation(states: np.ndarray, iterations: int, nSeconds: int
 
     print(' Progress animation done!')
 
-def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, filename: str, angle = 0, env = None):
-    
-    model = torch.load(f"./models/{model_name}/final_weights.pt")
-    
-    grid_size = model.grid_size
-    
-    states = np.zeros((6, iterations, grid_size, grid_size, 4))
-    
-    # Run model without pruning
-    states[0] = grid.run(model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
-    
-    # Run model after pruning each percent
-    percents = [5, 10, 15, 20, 25]
-    pruned_percents = [0]
-    for i in range(len(percents)):
-        
-        # Prune model
-        model_size, pruned_size, pruned_model = prune_by_percent(model, percent=percents[i])
-        
-        # Compute pruned percentages
-        pruned_percentage = (model_size - pruned_size)*100/model_size
-        pruned_percents.append(pruned_percentage)
-        
-        # Run model
-        states[i+1] = grid.run(pruned_model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
-        
-    fps = iterations/nSeconds
-
-    # First set up the figure, the axis, and the plot elements we want to animate
-    fig, axs = plt.subplots(nrows=1, ncols=6, figsize=(48,8))  # 6 subplots for 6 animations
-    
-    # Clip values between 0 and 1
-    states = states.clip(0, 1)
-    
-    # Titles
-    titles = [f"{pruned_percents[i]:.2f}%" for i in range(len(pruned_percents))]
-    
-    # Create an array to hold your image objects
-    ims = []
-    for j in range(6):  # loop over your new dimension
-        a = states[j, 0]  # the initial state for each animation
-        im = axs[j].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
-        axs[j].axis('off')
-        axs[j].set_title(titles[j], fontsize = 30)
-        ims.append(im)
-        
-    plt.tight_layout()
-
-    def animate_func(i):
-        if i % fps == 0:
-            print('.', end ='')
-        
-        for j in range(6):  # loop over your new dimension
-            ims[j].set_array(states[j, i])  # update each animation
-
-        return ims
-
-    anim = animation.FuncAnimation(
-        fig, 
-        animate_func, 
-        frames = iterations,
-        interval = 1000 / fps, # in ms
-        )
-
-    anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
-
-    print(' Pruning animation done!')
-    
-
 def plot_log_loss(ax, epoch, loss):
     ax.set_title("Loss history", fontsize = 40)
     ax.set_xlabel("Iterations", fontsize =30)
@@ -220,5 +152,106 @@ def save_loss_plot(n_epochs: int, model_losses: list, filename: str):
     plt.title("Loss history", fontsize = 18)
     plt.tight_layout()
     plt.savefig(filename)
+    
+def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy_type: int, destroy: bool = True, angle: float = 0.0, env = None):
+    
+    model = torch.load(f"./models/{model_name}/final_weights.pt")
+    losses = np.zeros((model.grid_size, model.grid_size))
+    
+    for i in tqdm(range(model.grid_size)):
+        for j in range(model.grid_size):
+            
+            states = grid.run(model, iterations, destroy_type = destroy_type, destroy = destroy, angle = angle, env = env, seed = (i, j))
+            
+             # Compute loss
+            losses[i, j] = ((states[-1]-model.target.numpy())**2).mean()
+    
+    plt.imshow(np.log10(losses), vmax = 0)
+    plt.title(f"Log loss at different seed positions\n{model_name}")
+    plt.colorbar()
+    plt.savefig(filename)
+    plt.show()
+
+
+def comparing_pruning_losses(model1: str, grid1, env1, model2: str, grid2, env2, filename: str, iterations: int, angle: float = 0.0):
+    
+    percents, loss1 = compute_pruning_losses(model1, grid1, iterations, angle, env1)
+    percents, loss2 = compute_pruning_losses(model2, grid2, iterations, angle, env2)
+    plt.scatter(percents, np.log10(loss1))
+    plt.scatter(percents, np.log10(loss2))
+    plt.xlabel("Pruned percentage (%)", fontsize =12)
+    plt.ylabel("Log loss", fontsize = 12)
+    plt.title("Loss after pruning", fontsize = 18)
+    plt.legend([model1, model2])
+    plt.tight_layout()
+    plt.savefig(filename)
+    
+    
+def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, filename: str, angle: float = 0.0, env = None):
+    
+    model = torch.load(f"./models/{model_name}/final_weights.pt")
+    
+    grid_size = model.grid_size
+    
+    states = np.zeros((6, iterations, grid_size, grid_size, 4))
+
+    # Run model without pruning
+    states[0] = grid.run(model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+    
+    # Run model after pruning each percent
+    percents = [5, 10, 15, 20, 25]
+    pruned_percents = [0]
+    for i in range(len(percents)):
+        
+        # Prune model
+        model_size, pruned_size, pruned_model = prune_by_percent(model, percent=percents[i])
+        # Compute pruned percentages
+        pruned_percentage = (model_size - pruned_size)*100/model_size
+        pruned_percents.append(pruned_percentage)
+        
+        # Run model
+        states[i+1] = grid.run(pruned_model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+        
+    fps = iterations/nSeconds
+
+    # First set up the figure, the axis, and the plot elements we want to animate
+    fig, axs = plt.subplots(nrows=1, ncols=6, figsize=(48,8))  # 6 subplots for 6 animations
+    
+    # Clip values between 0 and 1
+    states = states.clip(0, 1)
+    
+    # Titles
+    titles = [f"{pruned_percents[i]:.2f}%" for i in range(len(pruned_percents))]
+    
+    # Create an array to hold your image objects
+    ims = []
+    for j in range(6):  # loop over your new dimension
+        a = states[j, 0]  # the initial state for each animation
+        im = axs[j].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
+        axs[j].axis('off')
+        axs[j].set_title(titles[j], fontsize = 40)
+        ims.append(im)
+        
+    plt.tight_layout()
+
+    def animate_func(i):
+        if i % fps == 0:
+            print('.', end ='')
+        
+        for j in range(6):  # loop over your new dimension
+            ims[j].set_array(states[j, i])  # update each animation
+
+        return ims
+
+    anim = animation.FuncAnimation(
+        fig, 
+        animate_func, 
+        frames = iterations,
+        interval = 1000 / fps, # in ms
+        )
+
+    anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
+
+    print(' Pruning animation done!')
 
     

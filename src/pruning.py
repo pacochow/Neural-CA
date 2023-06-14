@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import copy
 import numpy as np
+from helpers.helpers import state_to_image
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 def prune_network(model: nn.Module, threshold: float) -> nn.Module:
   """
@@ -61,3 +64,36 @@ def prune_by_percent(model: nn.Module, percent: float):
     pruned_percentage = (model_size - pruned_size)*100/model_size
     # print(f'Pruning completed! {pruned_percentage:.2f}% of the model was pruned.\n')
     return model_size, pruned_size, pruned_model
+  
+  
+def compute_pruning_losses(model_name: str, grid, iterations: int, angle: float = 0.0, env = None) -> tuple[list, list]:
+  
+  model = torch.load(f"./models/{model_name}/final_weights.pt")
+  if model_name == 'env_circle_16_1':
+    model.env = True
+  losses = []
+  
+  # Run model without pruning
+  states = grid.run(model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+  
+  # Compute loss
+  losses.append(((states[-1]-model.target.numpy())**2).mean())
+  
+  # Run model after pruning each percent
+  percents = np.linspace(2, 25, 30)
+  
+  for i in tqdm(range(len(percents))):
+      
+      # Prune model
+      _, _, pruned_model = prune_by_percent(model, percent=percents[i])
+      
+      # Run model
+      if model_name == 'env_circle_16_1':
+        pruned_model.env = True
+      states = grid.run(pruned_model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+      
+      # Compute loss
+      losses.append(((states[-1]-pruned_model.target.numpy())**2).mean())
+  
+  percents = [0]+list(percents)
+  return percents, losses
