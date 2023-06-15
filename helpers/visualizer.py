@@ -8,7 +8,7 @@ from src.pruning import *
 from tqdm import tqdm
 
 
-def create_animation(states: np.ndarray, iterations: int, nSeconds: int, filename: str):
+def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSeconds: int, filename: str, vis_env = False):
 
     fps = iterations/nSeconds
 
@@ -19,14 +19,20 @@ def create_animation(states: np.ndarray, iterations: int, nSeconds: int, filenam
     states = states.clip(0, 1)
     
     a = states[0]
+    b = envs[0]
+    cm = create_colormap()
+    if vis_env == True:
+        im2 = plt.imshow(b, cmap = cm, interpolation = 'gaussian', aspect = 'auto', vmin = 0, vmax=1)
     im = plt.imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
     plt.axis('off')
 
     def animate_func(i):
         if i % fps == 0:
             print( '.', end ='' )
-
+        if vis_env == True:
+            im2.set_array(envs[i])
         im.set_array(states[i])
+
         return [im]
 
     anim = animation.FuncAnimation(
@@ -153,7 +159,7 @@ def save_loss_plot(n_epochs: int, model_losses: list, filename: str):
     plt.tight_layout()
     plt.savefig(filename)
     
-def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy_type: int, destroy: bool = True, angle: float = 0.0, env = None):
+def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy: bool = True, angle: float = 0.0, env = None):
     
     model = torch.load(f"./models/{model_name}/final_weights.pt")
     losses = np.zeros((model.grid_size, model.grid_size))
@@ -161,7 +167,7 @@ def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy_t
     for i in tqdm(range(model.grid_size)):
         for j in range(model.grid_size):
             
-            states = grid.run(model, iterations, destroy_type = destroy_type, destroy = destroy, angle = angle, env = env, seed = (i, j))
+            states = grid.run(model, iterations, destroy = destroy, angle = angle, env = env, seed = (i, j))
             
              # Compute loss
             losses[i, j] = ((states[-1]-model.target.numpy())**2).mean()
@@ -169,6 +175,7 @@ def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy_t
     plt.imshow(np.log10(losses), vmax = 0)
     plt.title(f"Log loss at different seed positions\n{model_name}")
     plt.colorbar()
+    plt.tight_layout()
     plt.savefig(filename)
     plt.show()
 
@@ -196,7 +203,7 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
     states = np.zeros((6, iterations, grid_size, grid_size, 4))
 
     # Run model without pruning
-    states[0] = grid.run(model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+    states[0] = grid.run(model, iterations, destroy = True, angle = angle, env = env)
     
     # Run model after pruning each percent
     percents = [5, 10, 15, 20, 25]
@@ -210,7 +217,7 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
         pruned_percents.append(pruned_percentage)
         
         # Run model
-        states[i+1] = grid.run(pruned_model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+        states[i+1] = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
         
     fps = iterations/nSeconds
 

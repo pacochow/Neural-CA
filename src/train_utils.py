@@ -8,9 +8,12 @@ from helpers.visualizer import *
 
     
     
-def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: int = 8, pool_size: int = 1024, regenerate: bool = True, env: torch.Tensor = None):
+def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: int = 8, pool_size: int = 1024, regenerate: bool = True, env: torch.Tensor = None, dynamic_env: bool = False):
     """ 
-    Train with pool
+    Train with pool. 
+    Set regenerate = True to train regeneration capabilities. 
+    Set env = None to train without environment. 
+    Set dynamic_env = True to train with dynamic environment. 
     """
     
     # Define optimizer and scheduler
@@ -59,7 +62,11 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Run model
         x = torch.Tensor(x0)
         if env is not None:
-            for _ in range(iterations):
+            for t in range(iterations):
+                
+                # Get new environment
+                if dynamic_env == True:
+                    env = grid.get_env(t, env, type = 'pulse')
                 x = model.update(x, env)
         else:
             for _ in range(iterations):      
@@ -131,7 +138,7 @@ def create_circular_mask(grid, grid_size: int, center_radius: float = 8.0):
     grid = grid*(1-mask)
     return grid
 
-def create_block_mask(grid, grid_size: int, type: int, mask_size: float = 4.0):
+def create_block_mask(grid, grid_size: int, type: int = 0, mask_size: float = 4.0):
     """
     Returns masked out grid
     """

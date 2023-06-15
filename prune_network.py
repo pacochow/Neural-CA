@@ -11,7 +11,7 @@ angle = 0.0
 
 
 # Load model
-model_name = 'standard_17'
+model_name = 'env_circle_16_1'
 model = torch.load(f"./models/{model_name}/final_weights.pt")
 
 
@@ -21,20 +21,20 @@ grid = Grid(grid_size, model.model_channels)
 
 # Initialise environment
 env = None
-# env = grid.init_env(model.env_channels)
-# env = grid.add_env(env, "circle", 0)
+env = grid.init_env(model.env_channels)
+env = grid.add_env(env, "circle", 0)
 
 # Visualise progress animation
-# filename = f"./models/{model_name}/pruned_visualization.mp4"
-# visualize_pruning(model_name, grid, iterations, nSeconds, filename = filename, angle = angle, env = env)
+filename = f"./models/{model_name}/pruned_visualization.mp4"
+visualize_pruning(model_name, grid, iterations, nSeconds, filename = filename, angle = angle, env = env)
 
-model_name_2 = 'env_circle_16_1'
-model2 = torch.load(f"./models/{model_name_2}/final_weights.pt")
+# model_name_2 = 'env_circle_16_1'
+# model2 = torch.load(f"./models/{model_name_2}/final_weights.pt")
 
-grid2 = Grid(grid_size, model2.model_channels)
-env2 = grid2.init_env(model2.env_channels)
-env2 = grid2.add_env(env2, "circle", 0)
-comparing_pruning_losses(model_name, grid, env, model_name_2, grid2, env2, "comparing_pruned_loss.png", iterations, angle)
+# grid2 = Grid(grid_size, model2.model_channels)
+# env2 = grid2.init_env(model2.env_channels)
+# env2 = grid2.add_env(env2, "circle", 0)
+# comparing_pruning_losses(model_name, grid, env, model_name_2, grid2, env2, "comparing_pruned_loss.png", iterations, angle)
 
 
 

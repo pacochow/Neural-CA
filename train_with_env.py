@@ -67,4 +67,5 @@ else:
     env = grid.add_env(env, "circle", channel = 0)
 
 # Train model
-model_losses = train(model, grid, n_epochs, model_name = model_name, batch_size = 8, pool_size = 1024, regenerate = True, env = env)
+train(model, grid, n_epochs, model_name = model_name, batch_size = 8, pool_size = 1024, 
+      regenerate = True, env = env, dynamic_env = True)

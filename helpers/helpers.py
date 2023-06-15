@@ -5,6 +5,7 @@ import PIL.Image, PIL.ImageDraw
 import base64
 import requests
 from IPython.display import Image
+from matplotlib.colors import LinearSegmentedColormap
 
 
 def np2pil(a):
@@ -152,4 +153,13 @@ def create_circular_gradient(grid_size: int, circle_center: tuple, circle_radius
 
     return 1-torch.tensor(gradient)
 
+def create_colormap():
+  # Define a colormap
+  colors = [(1, 1, 1), (0.9, 0.8, 0.2)]  # R -> G -> B
+  n_bins = [100]  # Discretize the interpolation into bins
+  cmap_name = 'custom1'
+  # Create the colormap
+  cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=n_bins[0])
+
+  return cm
 

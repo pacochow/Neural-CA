@@ -21,18 +21,20 @@ grid = Grid(grid_size, model.model_channels)
 env = None
 env = grid.init_env(model.env_channels)
 # env = grid.add_env(env, "linear", 0)
-env = grid.add_env(env, "circle", 0, circle_center = (grid_size/2, grid_size/2), circle_radius = grid_size/2)
+env = grid.add_env(env, "circle", 0, circle_center = (grid_size/2, grid_size/2), circle_radius = model.grid_size/2)
+dynamic_env = False
 
 # Run model
-state_history = grid.run(model, iterations, destroy_type = 0, destroy = False, angle = angle, env = env, seed = True)
+state_history, env_history = grid.run(
+    model, iterations, destroy = False, angle = angle, env = env, seed = True, dynamic_env = dynamic_env)
 
 # Create animation
-filename = f'./models/{model_name}/diff_env_run.mp4'
-create_animation(state_history, iterations, nSeconds, filename)
+filename = f'./models/{model_name}/diff_seed_run.mp4'
+create_animation(state_history, env_history, iterations, nSeconds, filename, vis_env = dynamic_env)
 
 # Visualize seed losses at different seed positions
 # filename = f"./models/{model_name}/diff_seed_losses.png"
-# visualize_seed_losses(model_name, grid, iterations, filename, destroy_type = 0, destroy = True, angle = angle, env = env)
+# visualize_seed_losses(model_name, grid, iterations, filename, destroy = True, angle = angle, env = env)
 
 # # Create progress animation
 # states = load_progress_states(model_name, grid, iterations, grid_size, angle, env)

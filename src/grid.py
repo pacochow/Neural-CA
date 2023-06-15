@@ -13,7 +13,7 @@ class Grid:
         self.num_channels = model_channels+env_channels
     
     
-    def init_seed(self, grid_size: int, center = True) -> torch.Tensor:
+    def init_seed(self, grid_size: int, center: tuple = None) -> torch.Tensor:
         """ 
         Initialise seed. Set center to True to initialise seed location in the center.
         Set center to any tuple to change seed location.
@@ -27,7 +27,7 @@ class Grid:
         # Initialise seed to zeros everywhere
         seed = torch.zeros(1, self.model_channels, grid_size, grid_size)
         
-        if center == True:
+        if center == None:
             # Set seed in the center to be equal to 1 for all channels except RGB
             seed[:, 3:, grid_size//2, grid_size//2] = 1
         else:
@@ -35,16 +35,20 @@ class Grid:
         
         return seed
     
-    def run(self, model, iterations: int, destroy_type: int, destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, seed = True) -> np.ndarray:
+    def run(self, model, iterations: int, destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, seed = None, dynamic_env = False) -> np.ndarray:
         """ 
         Run model and save state history
         """
         state_grid = self.init_seed(self.grid_size, seed)
         state_history = np.zeros((iterations, self.grid_size, self.grid_size, 4))
+        env_history = np.zeros((iterations, self.grid_size, self.grid_size))
         for t in range(iterations):
             
-            # if env is not None:
-            #     env = self.get_env(t, env, circle_center = (self.grid_size/2, self.grid_size/2))
+            if env is not None and dynamic_env == True:
+                env = self.get_env(t, env, 'pulse')
+                env_history[t, :, :] = env[0].numpy()
+                
+                
                 
             with torch.no_grad():
                 # Visualize state
@@ -56,10 +60,10 @@ class Grid:
         
                 # Disrupt pattern
                 if destroy == True and t == iterations//2:
-                    state_grid = create_block_mask(state_grid, self.grid_size, type = destroy_type)
+                    state_grid = create_block_mask(state_grid, self.grid_size)
         
 
-        return state_history
+        return state_history, env_history
 
     
     def init_env(self, env_channels: int) -> torch.Tensor:
@@ -99,17 +103,31 @@ class Grid:
         return env
     
 
-    def get_env(self, t: int, env: torch.Tensor, circle_center: tuple, type = 'pulse') -> torch.Tensor:
+    def get_env(self, t: int, env: torch.Tensor, type = 'pulse') -> torch.Tensor:
         """
         Returns new environment as a function of env
         """
         
         if type == 'pulse':
-            if t <= 50:
+            if t <= 10:
                 radius = 20
             else:
-                radius = 20+10*np.sin(0.05*t)
+                radius = 20+10*np.sin(0.2*(t-10))
             env = self.add_env(env, type = 'circle', circle_center = (self.grid_size/2, self.grid_size/2), circle_radius = radius)
             return env
+        elif type == 'translation':
+            if t <= 1:
+                mid = 50
+            elif t <= 30:
+                mid = 50 - (t - 1)
+            elif 150 <= t <= 210:
+                mid = 20 + (t - 150)
+            elif t <= 350:
+                return env
+            else:
+                mid = 20
+            env = self.add_env(env, type = 'circle', circle_center = (mid, mid))
+            return env
+
         
     
