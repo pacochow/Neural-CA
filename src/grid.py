@@ -35,7 +35,8 @@ class Grid:
         
         return seed
     
-    def run(self, model, iterations: int, destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, seed = None, dynamic_env = False) -> np.ndarray:
+    def run(self, model, iterations: int, destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, 
+            seed = None, dynamic_env = False, dynamic_env_type: str = None) -> np.ndarray:
         """ 
         Run model and save state history
         """
@@ -45,7 +46,7 @@ class Grid:
         for t in range(iterations):
             
             if env is not None and dynamic_env == True:
-                env = self.get_env(t, env, 'pulse')
+                env = self.get_env(t, env, dynamic_env_type)
                 env_history[t, :, :] = env[0].numpy()
                 
                 
@@ -56,7 +57,7 @@ class Grid:
                 state_history[t] = transformed_img.detach().numpy().reshape(self.grid_size, self.grid_size, 4)
                 
                 # Update step
-                state_grid = model.update(state_grid, env, angle = angle)
+                state_grid, _ = model.update(state_grid, env, angle = angle)
         
                 # Disrupt pattern
                 if destroy == True and t == iterations//2:
@@ -105,21 +106,21 @@ class Grid:
 
     def get_env(self, t: int, env: torch.Tensor, type = 'pulse') -> torch.Tensor:
         """
-        Returns new environment as a function of env
+        Returns new environment as a function of time
         """
         
         if type == 'pulse':
             if t <= 10:
                 radius = 20
             else:
-                radius = 20+10*np.sin(0.2*(t-10))
+                radius = 20+10*np.sin(0.05*(t-10))
             env = self.add_env(env, type = 'circle', circle_center = (self.grid_size/2, self.grid_size/2), circle_radius = radius)
             return env
         elif type == 'translation':
-            if t <= 1:
+            if t <= 20:
                 mid = 50
-            elif t <= 30:
-                mid = 50 - (t - 1)
+            elif t <= 50:
+                mid = 50 - (t - 20)
             elif 150 <= t <= 210:
                 mid = 20 + (t - 150)
             elif t <= 350:
@@ -127,6 +128,8 @@ class Grid:
             else:
                 mid = 20
             env = self.add_env(env, type = 'circle', circle_center = (mid, mid))
+            return env
+        else:
             return env
 
         

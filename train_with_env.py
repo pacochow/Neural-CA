@@ -17,12 +17,14 @@ model_channels = 16
 env_channels = 1
 fire_rate = 0.5
 n_epochs = 8000
+env_output = True
+dynamic_env = False
 
 
 # Initialise model and grid
 torch.manual_seed(0)
 np.random.seed(0)
-model = Env_CA(target_img, grid_size, model_channels, env_channels, fire_rate)
+model = Env_CA(target_img, grid_size, model_channels, env_channels, fire_rate, env_output = env_output)
 
 grid = Grid(grid_size, model_channels)
 
@@ -39,4 +41,4 @@ else:
 # Train model
 model_losses = train(
     model, grid, n_epochs, model_name = model_name, batch_size = 8, pool_size = 1024, 
-    regenerate = True, env = env, dynamic_env = True)
+    regenerate = True, env = env, dynamic_env = dynamic_env)

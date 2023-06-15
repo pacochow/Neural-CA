@@ -5,10 +5,12 @@ import torch.optim as optim
 from tqdm import tqdm
 from helpers.helpers import *
 from helpers.visualizer import *
+import copy
 
     
     
-def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: int = 8, pool_size: int = 1024, regenerate: bool = True, env: torch.Tensor = None, dynamic_env: bool = False):
+def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: int = 8, pool_size: int = 1024, 
+          regenerate: bool = True, env: torch.Tensor = None, dynamic_env: bool = False):
     """ 
     Train with pool. 
     Set regenerate = True to train regeneration capabilities. 
@@ -29,6 +31,11 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     model_losses = []
     
     pbar = tqdm(total = n_epochs+1)
+    
+    # Make env have dimensions (n, env_channels, grid_size, grid_size)
+    if env is not None:
+        env = env.repeat(batch_size, 1, 1, 1)
+        
     for epoch in range(n_epochs+1):
         
         optimizer.zero_grad()
@@ -62,15 +69,18 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Run model
         x = torch.Tensor(x0)
         if env is not None:
+            
+            new_env = copy.deepcopy(env)
+            
             for t in range(iterations):
                 
                 # Get new environment
                 if dynamic_env == True:
-                    env = grid.get_env(t, env, type = 'pulse')
-                x = model.update(x, env)
+                    new_env = grid.get_env(t, new_env, type = 'pulse')
+                x, new_env = model.update(x, new_env)
         else:
             for _ in range(iterations):      
-                x = model.update(x)
+                x, _ = model.update(x)
             
         # Pixel-wise L2 loss
         transformed_img = state_to_image(x)
@@ -79,7 +89,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         
             
         model_losses.append(loss.item())
-        loss.backward() 
+        loss.backward()
 
         # Normalize gradients
         for param in model.parameters():

@@ -9,13 +9,14 @@ class Env_CA(nn.Module):
     Input: n, 48, grid_size, grid_size
     Output: n, 16, grid_size, grid_size
     """
-    def __init__(self, target: np.ndarray, grid_size: int, model_channels = 16, env_channels = 1, fire_rate = 0.5):
+    def __init__(self, target: np.ndarray, grid_size: int, model_channels = 16, env_channels = 1, fire_rate = 0.5, env_output = False):
         super(Env_CA, self).__init__()
         
         self.target = torch.tensor(target)
         self.grid_size = grid_size
         self.model_channels = model_channels
         self.env_channels = env_channels
+        self.env_output = env_output
         
         if env_channels > 0:
             self.env = True
@@ -28,7 +29,10 @@ class Env_CA(nn.Module):
         
         # Update network
         self.conv1 = nn.Conv2d(self.input_dim, 128, 1)
-        self.conv2 = nn.Conv2d(128, self.model_channels, 1)
+        if self.env_output == False:
+            self.conv2 = nn.Conv2d(128, self.model_channels, 1)
+        else:
+            self.conv2 = nn.Conv2d(128, self.num_channels, 1)
         nn.init.xavier_uniform_(self.conv1.weight)
         nn.init.zeros_(self.conv1.bias)
         self.relu = nn.ReLU()
@@ -46,9 +50,7 @@ class Env_CA(nn.Module):
         Compute perception vectors
 
         :param state_grid: n, num_channels, grid_size, grid_size
-        :type state_grid: torch tensor
         :return: n, input_dim, grid_size, grid_size
-        :rtype: torch tensor
         """    
         
         # Identity filter
@@ -76,16 +78,13 @@ class Env_CA(nn.Module):
 
         return perception_grid
 
-    def stochastic_update(self, state_grid: torch.Tensor, ds_grid: torch.Tensor) -> torch.Tensor:
+    def stochastic_update(self, grid: torch.Tensor, ds_grid: torch.Tensor) -> torch.Tensor:
         """ 
         Apply stochastic mask so that all cells do not update together.
 
-        :param state_grid: n,16,grid_size,grid_size
-        :type state_grid: torch tensor
-        :param ds_grid: n,16,grid_size,grid_size
-        :type ds_grid: torch tensor
-        :return: n,16,grid_size,grid_size
-        :rtype: torch tensor
+        :param grid: n, channels, grid_size, grid_size
+        :param ds_grid: n, channels, grid_size, grid_size
+        :return: n, channels, grid_size, grid_size
         """
         
         
@@ -95,19 +94,17 @@ class Env_CA(nn.Module):
         rand_mask = (torch.rand(ds_grid.shape[0], 1, size,size)<=self.fire_rate)
         
         # Apply same random mask to every channel of same position
-        rand_mask = rand_mask.repeat(1, self.model_channels, 1, 1)
+        rand_mask = rand_mask.repeat(1, grid.shape[1], 1, 1)
         
         # Zero updates for cells that are masked out
         ds_grid = ds_grid*rand_mask
-        return state_grid+ds_grid
+        return grid+ds_grid
 
     def alive_masking(self, state_grid: torch.Tensor) -> torch.Tensor:
         """ Returns mask for dead cells
         
-        :param state_grid: n,17,grid_size,grid_size
-        :type state_grid: torch tensor
-        :return: n,1,grid_size,grid_size
-        :rtype: torch tensor
+        :param state_grid: n, model_channels, grid_size, grid_size
+        :return: n, 1, grid_size, grid_size
         """
         
         # Max pool to find cells with alive neighbours
@@ -125,7 +122,8 @@ class Env_CA(nn.Module):
         
         # Perceive
         if self.env == True:
-            env = env.repeat(state_grid.shape[0], 1, 1, 1)      
+            
+            # Create full grid by concatenating state grid with env
             full_grid = torch.cat([state_grid,env], dim = 1)
             perception_grid = self.perceive(full_grid, angle)
         else: 
@@ -135,7 +133,17 @@ class Env_CA(nn.Module):
         ds_grid = self.forward(perception_grid)
 
         # Stochastic update mask
-        state_grid = self.stochastic_update(state_grid, ds_grid)
+        if self.env_output == True:
+            
+            # If env_output = True, update full grid 
+            full_grid = self.stochastic_update(full_grid, ds_grid)
+            state_grid = full_grid[:, :self.model_channels]
+            env = full_grid[:, -1].unsqueeze(1)
+            
+        else:
+            
+            # Else, only update state grid
+            state_grid = self.stochastic_update(state_grid, ds_grid)
         
         # Post update life mask
         post_mask = self.alive_masking(state_grid)
@@ -144,6 +152,5 @@ class Env_CA(nn.Module):
         
         # Zero out dead cells
         state_grid = life_mask*state_grid
-        
-        return state_grid
+        return state_grid, env
     
