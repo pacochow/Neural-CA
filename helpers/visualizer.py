@@ -54,16 +54,17 @@ def load_progress_states(model_name: str, grid, iterations: int, grid_size: int,
     
     # Initialise states
     states = np.zeros((4, iterations, grid_size, grid_size, 4))
+    envs = np.zeros((4, iterations, grid_size, grid_size))
     
     # Loop over all saved epochs and run model
     saved_epochs = [100, 500, 1000, 4000]
     for i in range(len(saved_epochs)):
         model = torch.load(f"./models/{model_name}/{saved_epochs[i]}.pt")
-        states[i] = grid.run(model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
+        states[i], envs[i] = grid.run(model, iterations, destroy = True, angle = angle, env = env)
     
-    return states
+    return states, envs
 
-def create_progress_animation(states: np.ndarray, iterations: int, nSeconds: int, filename: str):
+def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSeconds: int, filename: str, vis_env: bool = False):
     fps = iterations/nSeconds
 
     # First set up the figure, the axis, and the plot elements we want to animate
@@ -77,12 +78,19 @@ def create_progress_animation(states: np.ndarray, iterations: int, nSeconds: int
     
     # Create an array to hold your image objects
     ims = []
+    ims2 = []
+    
+    cm = create_colormap()
     for j in range(4):  # loop over your new dimension
         a = states[j, 0]  # the initial state for each animation
+        b = envs[j, 0]
+        if vis_env == True:
+            im2 = axs[j].imshow(b, cmap = cm, interpolation = 'gaussian', aspect = 'auto', vmin = 0, vmax = 1)
         im = axs[j].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
         axs[j].axis('off')
         axs[j].set_title(titles[j], fontsize = 40)
         ims.append(im)
+        ims2.append(im2)
     
     plt.tight_layout()
 
@@ -91,7 +99,9 @@ def create_progress_animation(states: np.ndarray, iterations: int, nSeconds: int
             print('.', end ='')
         
         for j in range(4):  # loop over your new dimension
+            ims2[j].set_array(envs[j, i])
             ims[j].set_array(states[j, i])  # update each animation
+            
 
         return ims
 
@@ -167,7 +177,7 @@ def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy: 
     for i in tqdm(range(model.grid_size)):
         for j in range(model.grid_size):
             
-            states = grid.run(model, iterations, destroy = destroy, angle = angle, env = env, seed = (i, j))
+            states, _ = grid.run(model, iterations, destroy = destroy, angle = angle, env = env, seed = (i, j))
             
              # Compute loss
             losses[i, j] = ((states[-1]-model.target.numpy())**2).mean()
@@ -203,7 +213,7 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
     states = np.zeros((6, iterations, grid_size, grid_size, 4))
 
     # Run model without pruning
-    states[0] = grid.run(model, iterations, destroy = True, angle = angle, env = env)
+    states[0], _ = grid.run(model, iterations, destroy = True, angle = angle, env = env)
     
     # Run model after pruning each percent
     percents = [5, 10, 15, 20, 25]
@@ -217,7 +227,7 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
         pruned_percents.append(pruned_percentage)
         
         # Run model
-        states[i+1] = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
+        states[i+1], _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
         
     fps = iterations/nSeconds
 
@@ -262,3 +272,34 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
     print(' Pruning animation done!')
 
     
+def plot_parameter_sizes(model_name: str, filename: str):
+
+    model = torch.load(f"./models/{model_name}/final_weights.pt")
+    
+    params = [x.data for x in model.parameters()]
+    
+    # Average over all weights for each channel to give array of length 17
+    weights = np.abs(params[2][:, :, 0, 0].mean(dim = 1).numpy())
+
+    # Categories and numbers
+    categories = list(range(1, 18))
+
+    # Bar chart
+    x = np.arange(len(categories))  # Label locations
+
+    fig, ax = plt.subplots()
+    rects = ax.bar(x[:-1], weights[:-1], label='Model channels')
+
+    # Special label for the last category
+    rects_last = ax.bar(x[-1], weights[-1], label='Environment channel')
+
+    # Add some text for labels, title and custom x-axis tick labels
+    ax.set_ylabel('Parameter size', fontsize = 13)
+    ax.set_xlabel('Channels', fontsize = 13)
+    ax.set_title('Mean size of parameters for each channel', fontsize = 16)
+    ax.set_xticks(x)
+    ax.set_xticklabels(categories, rotation = 0)
+    ax.legend()
+
+    plt.savefig(filename)
+    plt.show()

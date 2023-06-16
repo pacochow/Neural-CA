@@ -45,8 +45,9 @@ class Grid:
         env_history = np.zeros((iterations, self.grid_size, self.grid_size))
         for t in range(iterations):
             
-            if env is not None and dynamic_env == True:
-                env = self.get_env(t, env, dynamic_env_type)
+            if env is not None: 
+                if dynamic_env == True:
+                    env = self.get_env(t, env, dynamic_env_type)
                 env_history[t, :, :] = env[0].numpy()
                 
                 
@@ -57,8 +58,8 @@ class Grid:
                 state_history[t] = transformed_img.detach().numpy().reshape(self.grid_size, self.grid_size, 4)
                 
                 # Update step
-                state_grid, _ = model.update(state_grid, env, angle = angle)
-        
+                state_grid, env = model.update(state_grid, env, angle = angle)
+
                 # Disrupt pattern
                 if destroy == True and t == iterations//2:
                     state_grid = create_block_mask(state_grid, self.grid_size)
@@ -129,6 +130,9 @@ class Grid:
                 mid = 20
             env = self.add_env(env, type = 'circle', circle_center = (mid, mid))
             return env
+        elif type == 'phase':
+            opacity = 0.5+0.5*np.sin(0.2*(t+10*np.pi/4))
+            return opacity*env
         else:
             return env
 

@@ -70,18 +70,20 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         x = torch.Tensor(x0)
         if env is not None:
             
+            # Make a copy of the original environment
             new_env = copy.deepcopy(env)
             
             for t in range(iterations):
                 
                 # Get new environment
                 if dynamic_env == True:
-                    new_env = grid.get_env(t, new_env, type = 'pulse')
+                    new_env = grid.get_env(t, env, type = 'phase')
                 x, new_env = model.update(x, new_env)
+                
         else:
             for _ in range(iterations):      
                 x, _ = model.update(x)
-            
+
         # Pixel-wise L2 loss
         transformed_img = state_to_image(x)
         
