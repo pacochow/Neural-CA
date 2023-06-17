@@ -65,14 +65,12 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
             
         # Train with sample   
         iterations = np.random.randint(64, 97)
-        
         # Run model
         x = torch.Tensor(x0)
         if env is not None:
             
             # Make a copy of the original environment
             new_env = copy.deepcopy(env)
-            
             for t in range(iterations):
                 
                 # Get new environment

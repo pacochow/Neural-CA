@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from helpers.helpers import *
 from src.train_utils import create_block_mask
-import matplotlib.pyplot as plt
+import copy
 
 class Grid:
     
@@ -43,12 +43,13 @@ class Grid:
         state_grid = self.init_seed(self.grid_size, seed)
         state_history = np.zeros((iterations, self.grid_size, self.grid_size, 4))
         env_history = np.zeros((iterations, self.grid_size, self.grid_size))
+        new_env = copy.deepcopy(env)
         for t in range(iterations):
             
             if env is not None: 
                 if dynamic_env == True:
-                    env = self.get_env(t, env, dynamic_env_type)
-                env_history[t, :, :] = env[0].numpy()
+                    new_env = self.get_env(t, env, dynamic_env_type)
+                env_history[t, :, :] = new_env[0].numpy()
                 
                 
                 
@@ -79,7 +80,7 @@ class Grid:
         env = torch.zeros(1, env_channels, self.grid_size, self.grid_size)
         return env
         
-    def add_env(self, env: torch.Tensor, type = 'linear', channel: int = 0, angle: float = 45.0, circle_center: tuple = (20, 20), circle_radius: float = 20.0) -> torch.Tensor:
+    def add_env(self, env: torch.Tensor, type = 'linear', channel: int = 0, angle: float = 45.0, center: tuple = (20, 20), circle_radius: float = 20.0) -> torch.Tensor:
         """
         Add environment
 
@@ -97,10 +98,14 @@ class Grid:
             # Angle of 0 gives 0 to 1 from top to bottom
             env[:, channel] = create_angular_gradient(self.grid_size, angle)
         elif type == "circle":
-            env[:, channel] = create_circular_gradient(self.grid_size, circle_center=circle_center, circle_radius=circle_radius)
+            env[:, channel] = create_circular_gradient(self.grid_size, circle_center=center, circle_radius=circle_radius)
         elif type == "none":
             env[:, channel] = torch.zeros(self.grid_size, self.grid_size)
-
+        elif type == "directional":
+            dist = np.sqrt(50)
+            angle = angle*np.pi/180
+            env[:, channel] = create_circular_gradient(self.grid_size, (center[0]+dist*np.sin(angle), center[1]+dist*np.cos(np.pi+angle)), circle_radius = 15)
+            env[:, channel+1] = create_circular_gradient(self.grid_size, (center[0]+dist*np.sin(np.pi+angle), center[1]+dist*np.cos(angle)), circle_radius = 15)
             
         return env
     
@@ -114,7 +119,7 @@ class Grid:
             if t <= 10:
                 radius = 20
             else:
-                radius = 20+10*np.sin(0.05*(t-10))
+                radius = 20+10*np.sin(0.2*(t-10))
             env = self.add_env(env, type = 'circle', circle_center = (self.grid_size/2, self.grid_size/2), circle_radius = radius)
             return env
         elif type == 'translation':
@@ -130,9 +135,27 @@ class Grid:
                 mid = 20
             env = self.add_env(env, type = 'circle', circle_center = (mid, mid))
             return env
+        elif type == 'translation2':
+            if t <= 20:
+                mid = 50
+            elif t <= 50:
+                mid = 50 - (t - 20)
+            elif 150 <= t <= 210:
+                mid = 20 + (t - 150)
+            elif t <= 350:
+                return env
+            else:
+                mid = 20
+            env = self.add_env(env, type = 'circle', circle_center = (mid, self.grid_size/2))
+            return env
         elif type == 'phase':
             opacity = 0.5+0.5*np.sin(0.2*(t+10*np.pi/4))
             return opacity*env
+        elif type == 'free_move':
+            
+            center = (20, 20)
+            angle = -45
+            env = self.add_env(env, type = 'directional', channel = 0, angle = angle, center = center)
         else:
             return env
 
