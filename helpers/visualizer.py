@@ -20,9 +20,13 @@ def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSec
     
     a = states[0]
     b = envs[0]
+
     cm = create_colormap()
     if vis_env == True:
-        im2 = plt.imshow(b, cmap = cm, interpolation = 'gaussian', aspect = 'auto', vmin = 0, vmax=1)
+        im2 = plt.imshow(b[0], cmap = cm, interpolation = 'gaussian', aspect = 'auto', vmin = 0, vmax=1)
+        if b.shape[0] > 1:
+            im3 = plt.imshow(b.sum(axis = 0)/(b.sum(axis = 0).max()), cmap = cm, interpolation = 'gaussian', aspect = 'auto', vmin = 0, vmax=1)
+        
     im = plt.imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
     plt.axis('off')
 
@@ -30,7 +34,9 @@ def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSec
         if i % fps == 0:
             print( '.', end ='' )
         if vis_env == True:
-            im2.set_array(envs[i])
+            im2.set_array(envs[i, 0])
+            if b.shape[0] > 1:
+                im3.set_array(envs[i].sum(axis = 0)/(envs[i].sum(axis = 0).max()))
         im.set_array(states[i])
 
         return [im]

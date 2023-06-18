@@ -67,10 +67,10 @@ def to_rgb(x):
   return 1.0-a+rgb
 
 def pad_image(x: np.ndarray, grid_size: int):
-    img_size = x.shape[0]
-    pad = (grid_size-img_size)//2
-    padded = np.pad(x, ((pad, pad), (pad, pad), (0, 0)))
-    return padded
+  img_size = x.shape[0]
+  pad = (grid_size-img_size)//2
+  padded = np.pad(x, ((pad, pad), (pad, pad), (0, 0)))
+  return padded
 
 def state_to_image(state: torch.Tensor) -> torch.Tensor:
   """ 
@@ -114,44 +114,83 @@ def create_angular_gradient(grid_size: int, angle: float) -> torch.Tensor:
 
   # Create the gradient by normalizing the rotated x-coordinates
   gradient = (x_rot + grid_size / 2) / grid_size
+  
+  # Normalize the tensor between 0 and 1
+  gradient = (gradient - gradient.min()) / (gradient.max() - gradient.min())
 
   return torch.tensor(gradient)
 
-
-import numpy as np
-import torch
-
 def create_circular_gradient(grid_size: int, circle_center: tuple, circle_radius: float = None) -> torch.Tensor:
-    """
-    Create grid with circular gradient. 1 in the center and 0 on the outside.
+  """
+  Create grid with circular gradient. 1 in the center and 0 on the outside.
 
-    :param grid_size: Grid size
-    :type grid_size: int
-    :param circle_center: Circle center coordinates
-    :type circle_center: Tuple
-    :param circle_radius: Circle radius (default is maximum possible radius)
-    :type circle_radius: float
-    :return: grid_size, grid_size
-    :rtype: Torch tensor
-    """
-    
-    # Create a grid of coordinates
-    y, x = np.ogrid[:grid_size, :grid_size]
+  :param grid_size: Grid size
+  :type grid_size: int
+  :param circle_center: Circle center coordinates
+  :type circle_center: Tuple
+  :param circle_radius: Circle radius (default is maximum possible radius)
+  :type circle_radius: float
+  :return: grid_size, grid_size
+  :rtype: Torch tensor
+  """
+  
+  # Create a grid of coordinates
+  y, x = np.ogrid[:grid_size, :grid_size]
 
-    # Compute the distance from the center to each point in the grid
-    dist_from_center = np.sqrt((x - circle_center[0])**2 + (y - circle_center[1])**2)
+  # Compute the distance from the center to each point in the grid
+  dist_from_center = np.sqrt((x - circle_center[0])**2 + (y - circle_center[1])**2)
 
-    # If no specific circle_radius, normalize by the maximum possible radius
-    if circle_radius is None:
-        circle_radius = np.sqrt((grid_size-1-circle_center[0])**2 + (grid_size-1-circle_center[1])**2)
+  # If no specific circle_radius, normalize by the maximum possible radius
+  if circle_radius is None:
+      circle_radius = np.sqrt((grid_size-1-circle_center[0])**2 + (grid_size-1-circle_center[1])**2)
 
-    # Create initial gradient
-    gradient = dist_from_center / circle_radius
+  # Create initial gradient
+  gradient = dist_from_center / circle_radius
 
-    # Clip values outside the circle to 1
-    gradient[dist_from_center > circle_radius] = 1.0
+  # Clip values outside the circle to 1
+  gradient[dist_from_center > circle_radius] = 1.0
 
-    return 1-torch.tensor(gradient)
+  return 1-torch.tensor(gradient)
+  
+
+def create_oval_gradient(grid_size: int, angle: float, aspect_ratio: float = 0.2) -> torch.Tensor:
+  
+  """
+  Creates a gradient in the shape of an oval, with 1 in the center. Angle determines the angle of the oval.
+  Aspect ratio determines how circular the oval is.
+  """
+  
+  # Convert the angle to radians
+  angle = np.radians(angle)
+
+  # Create a grid of coordinates
+  y, x = np.meshgrid(np.arange(grid_size), np.arange(grid_size))
+
+  # Shift the coordinates so that the origin is at the center of the grid
+  x = x - grid_size / 2
+  y = y - grid_size / 2
+
+  # Scale the coordinates to change the size of the oval
+  x = x / (2 * grid_size)
+  y = y / (2 * grid_size)
+
+  # Rotate the coordinates by the angle
+  x_rot = x * np.cos(angle) - y * np.sin(angle)
+  y_rot = x * np.sin(angle) + y * np.cos(angle)
+
+  # Apply the aspect ratio to the x-coordinates before calculating the distances
+  x_rot = x_rot * aspect_ratio
+
+  # Calculate the distance from the center of the grid to each point
+  distances = np.sqrt(x_rot**2 + y_rot**2)
+
+  # Normalize the distances to create the gradient
+  gradient = 1 - distances / np.max(distances)
+
+  # Set all negative values (those outside the oval) to 0
+  gradient[gradient < 0] = 0
+
+  return torch.tensor(gradient)
 
 def create_colormap():
   # Define a colormap

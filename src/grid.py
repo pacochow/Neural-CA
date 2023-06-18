@@ -42,14 +42,14 @@ class Grid:
         """
         state_grid = self.init_seed(self.grid_size, seed)
         state_history = np.zeros((iterations, self.grid_size, self.grid_size, 4))
-        env_history = np.zeros((iterations, self.grid_size, self.grid_size))
+        env_history = np.zeros((iterations, model.env_channels, self.grid_size, self.grid_size))
         new_env = copy.deepcopy(env)
         for t in range(iterations):
             
             if env is not None: 
                 if dynamic_env == True:
                     new_env = self.get_env(t, env, dynamic_env_type)
-                env_history[t, :, :] = new_env[0].numpy()
+                env_history[t, :, :, :] = new_env[0, :].numpy()
                 
                 
                 
@@ -80,7 +80,7 @@ class Grid:
         env = torch.zeros(1, env_channels, self.grid_size, self.grid_size)
         return env
         
-    def add_env(self, env: torch.Tensor, type = 'linear', channel: int = 0, angle: float = 45.0, center: tuple = (20, 20), circle_radius: float = 20.0) -> torch.Tensor:
+    def add_env(self, env: torch.Tensor, type = 'linear', channel: int = 0, angle: float = -45.0, center: tuple = (20, 20), circle_radius: float = 20.0) -> torch.Tensor:
         """
         Add environment
 
@@ -120,7 +120,7 @@ class Grid:
                 radius = 20
             else:
                 radius = 20+10*np.sin(0.2*(t-10))
-            env = self.add_env(env, type = 'circle', circle_center = (self.grid_size/2, self.grid_size/2), circle_radius = radius)
+            env = self.add_env(env, type = 'circle', center = (self.grid_size/2, self.grid_size/2), circle_radius = radius)
             return env
         elif type == 'translation':
             if t <= 20:
@@ -133,24 +133,17 @@ class Grid:
                 return env
             else:
                 mid = 20
-            env = self.add_env(env, type = 'circle', circle_center = (mid, mid))
-            return env
-        elif type == 'translation2':
-            if t <= 20:
-                mid = 50
-            elif t <= 50:
-                mid = 50 - (t - 20)
-            elif 150 <= t <= 210:
-                mid = 20 + (t - 150)
-            elif t <= 350:
-                return env
-            else:
-                mid = 20
-            env = self.add_env(env, type = 'circle', circle_center = (mid, self.grid_size/2))
+            # env = self.add_env(env, type = 'circle', center = (mid, mid))
+            env = self.add_env(env, type = 'directional', angle = -45, center = (mid, mid))
             return env
         elif type == 'phase':
             opacity = 0.5+0.5*np.sin(0.2*(t+10*np.pi/4))
             return opacity*env
+        elif type == 'rotating':
+
+            angle = t-45
+            env = self.add_env(env, type = 'directional', channel = 0, angle = angle, center = (self.grid_size/2, self.grid_size/2))
+            return env
         elif type == 'free_move':
             
             center = (20, 20)
