@@ -78,10 +78,10 @@ def state_to_image(state: torch.Tensor) -> torch.Tensor:
 
   :param state: nx16x28x28
   :type state: Torch tensor
-  :return: n, 28, 28, 4
+  :return: n, 28, 28, n_channels
   :rtype: Array
   """
-  return state.permute(0, 2, 3, 1)[..., :4]
+  return state.permute(0, 2, 3, 1)
 
   
   

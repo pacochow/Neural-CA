@@ -10,7 +10,7 @@ import copy
     
     
 def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: int = 8, pool_size: int = 1024, 
-          regenerate: bool = True, env: torch.Tensor = None, dynamic_env: bool = False):
+          regenerate: bool = True, env: torch.Tensor = None, dynamic_env: bool = False, modulate: bool = False):
     """ 
     Train with pool. 
     Set regenerate = True to train regeneration capabilities. 
@@ -47,7 +47,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         x0 = pool[indices]
         
         # Calculate loss of samples
-        sample_images = state_to_image(torch.tensor(x0))
+        sample_images = state_to_image(torch.tensor(x0))[..., :4]
         losses = ((sample_images - model.target)**2).mean(dim = [1, 2, 3])
         
         # Sort indices of losses with highest loss first
@@ -67,23 +67,30 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         iterations = np.random.randint(64, 97)
         # Run model
         x = torch.Tensor(x0)
+        
+        modulate_vals = torch.zeros(batch_size, 1, grid_size, grid_size)
+        
         if env is not None:
             
             # Make a copy of the original environment
             new_env = copy.deepcopy(env)
             for t in range(iterations):
                 
+                if modulate == True:
+                    new_env = modulate_vals*env
+                
                 # Get new environment
                 if dynamic_env == True:
                     new_env = grid.get_env(t, env, type = 'phase')
                 x, new_env = model.update(x, new_env)
+                modulate_vals = state_to_image(x)[..., 4].unsqueeze(1)
                 
         else:
             for _ in range(iterations):      
                 x, _ = model.update(x)
 
         # Pixel-wise L2 loss
-        transformed_img = state_to_image(x)
+        transformed_img = state_to_image(x)[..., :4]
         
         loss = ((transformed_img - model.target)**2).mean()
         

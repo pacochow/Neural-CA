@@ -16,8 +16,7 @@ def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSec
     fig = plt.figure( figsize=(8,8) )
     
     # Clip values between 0 and 1
-    states = states.clip(0, 1)
-    
+    states = states.clip(0, 1)[...,:4]
     a = states[0]
     b = envs[0]
 
@@ -36,7 +35,7 @@ def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSec
         if vis_env == True:
             im2.set_array(envs[i, 0])
             if b.shape[0] > 1:
-                im3.set_array(envs[i].sum(axis = 0)/(envs[i].sum(axis = 0).max()))
+                im3.set_array(envs[i].sum(axis = 0)/(b.sum(axis = 0).max()))
         im.set_array(states[i])
 
         return [im]
@@ -66,8 +65,9 @@ def load_progress_states(model_name: str, grid, iterations: int, grid_size: int,
     saved_epochs = [100, 500, 1000, 4000]
     for i in range(len(saved_epochs)):
         model = torch.load(f"./models/{model_name}/{saved_epochs[i]}.pt")
-        states[i], envs[i] = grid.run(model, iterations, destroy = True, angle = angle, env = env)
-    
+        full_states, envs[i] = grid.run(model, iterations, destroy = True, angle = angle, env = env)
+        states[i] = full_states[...,:4]
+        
     return states, envs
 
 def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSeconds: int, filename: str, vis_env: bool = False):
@@ -77,7 +77,7 @@ def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: 
     fig, axs = plt.subplots(nrows=1, ncols=4, figsize=(32,8))  # 4 subplots for 4 animations
     
     # Clip values between 0 and 1
-    states = states.clip(0, 1)
+    states = states.clip(0, 1)[...,:4]
     
     # Titles
     titles = [100, 500, 1000, 4000]
@@ -122,6 +122,62 @@ def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: 
 
     print(' Progress animation done!')
 
+
+def visualize_all_channels(states: np.ndarray, iterations: int, nSeconds: int, filename: str):
+
+    fps = iterations/nSeconds
+
+    # First set up the figure, the axis, and the plot elements we want to animate
+    fig, axs = plt.subplots(nrows=3, ncols=5, figsize=(40,24))  # 4 subplots for 4 animations
+
+    # Clip values between 0 and 1
+    states = states.clip(0, 1)
+
+    # Create an array to hold your image objects
+    ims = []
+    
+    titles = list(np.arange(5, 17, 1))
+    titles.insert(0, "1-4")
+
+    for j in range(13):  # loop over your new dimension
+        if j == 0:            
+            a = states[0][..., :4]  # the initial state for each animation
+        else:
+            a = states[0][..., j+3]
+        im = axs[j//5, j%5].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
+        axs[j//5, j%5].axis('off')
+        axs[j//5, j%5].set_title(titles[j], fontsize = 30)
+        ims.append(im)
+        
+    axs[2, 3].axis('off')
+    axs[2, 4].axis('off')
+    
+    plt.tight_layout()
+
+    def animate_func(i):
+        if i % fps == 0:
+            print('.', end ='')
+        
+        for j in range(13):  # loop over your new dimension
+            if j == 0:
+                ims[j].set_array(states[i][..., :4])  # update each animation
+            else:
+                ims[j].set_array(states[i][..., j+3])
+            
+
+        return ims
+
+    anim = animation.FuncAnimation(
+                                fig, 
+                                animate_func, 
+                                frames = iterations,
+                                interval = 1000 / fps, # in ms
+                                )
+
+    anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
+
+    print(' Full run done!')
+
 def plot_log_loss(ax, epoch, loss):
     ax.set_title("Loss history", fontsize = 40)
     ax.set_xlabel("Iterations", fontsize =30)
@@ -130,8 +186,8 @@ def plot_log_loss(ax, epoch, loss):
     ax.scatter(list(range(epoch+1)), np.log10(loss), marker = '.', alpha = 0.3)
 
 def visualize_batch(axs, x0, x):
-    x0 = state_to_image(x0).detach().numpy().clip(0, 1)
-    x = state_to_image(x).detach().numpy().clip(0, 1)
+    x0 = state_to_image(x0)[..., :4].detach().numpy().clip(0, 1)
+    x = state_to_image(x)[..., :4].detach().numpy().clip(0, 1)
 
     # Remove axes for all subplots
     for ax in axs.ravel():
@@ -184,7 +240,7 @@ def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy: 
         for j in range(model.grid_size):
             
             states, _ = grid.run(model, iterations, destroy = destroy, angle = angle, env = env, seed = (i, j))
-            
+            states = states[...,:4]
              # Compute loss
             losses[i, j] = ((states[-1]-model.target.numpy())**2).mean()
     
@@ -219,7 +275,8 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
     states = np.zeros((6, iterations, grid_size, grid_size, 4))
 
     # Run model without pruning
-    states[0], _ = grid.run(model, iterations, destroy = True, angle = angle, env = env)
+    full_states, _ = grid.run(model, iterations, destroy = True, angle = angle, env = env)
+    states[0] = full_states[...,:4]
     
     # Run model after pruning each percent
     percents = [5, 10, 15, 20, 25]
@@ -233,7 +290,8 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
         pruned_percents.append(pruned_percentage)
         
         # Run model
-        states[i+1], _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
+        full_states, _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
+        states[i+1] = full_states[...,:4]
         
     fps = iterations/nSeconds
 
@@ -281,23 +339,24 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
 def plot_parameter_sizes(model_name: str, filename: str):
 
     model = torch.load(f"./models/{model_name}/final_weights.pt")
-    
+    model.env_output = False
     params = [x.data for x in model.parameters()]
     
-    # Average over all weights for each channel to give array of length 17
+    # Average over all weights for each channel to give array of length num_channels
     weights = np.abs(params[2][:, :, 0, 0].mean(dim = 1).numpy())
 
     # Categories and numbers
-    categories = list(range(1, 18))
+    categories = list(range(1, model.model_channels+1))
 
     # Bar chart
     x = np.arange(len(categories))  # Label locations
 
     fig, ax = plt.subplots()
-    rects = ax.bar(x[:-1], weights[:-1], label='Model channels')
+    rects = ax.bar(x[:model.model_channels], weights[:model.model_channels], label='Model channels')
 
     # Special label for the last category
-    rects_last = ax.bar(x[-1], weights[-1], label='Environment channel')
+    if model.env_channels > 0 and model.env_output == True:
+        rects_last = ax.bar(x[-1], weights[-1], label='Environment channel')
 
     # Add some text for labels, title and custom x-axis tick labels
     ax.set_ylabel('Parameter size', fontsize = 13)
