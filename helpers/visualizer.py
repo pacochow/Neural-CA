@@ -335,11 +335,72 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
 
     print(' Pruning animation done!')
 
+
+def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSeconds: int, filename: str, destroy: bool = True, angle: float = 0.0, env = None):
+    
+    full_states, _ = grid.run(model, iterations, destroy = destroy, angle = angle, env = env)
+    states = np.zeros((13, iterations, model.grid_size, model.grid_size, 4))
+    states[0] = full_states[..., :4]
+
+    for i in range(4, 16):
+        pruned_model = prune_by_channel(model, i)
+        full_pruned_states, _ = grid.run(pruned_model, iterations, destroy = destroy, angle = angle, env = env)
+        states[i-3] = full_pruned_states[...,:4]
+
+    fps = iterations/nSeconds
+
+    # First set up the figure, the axis, and the plot elements we want to animate
+    fig, axs = plt.subplots(nrows=3, ncols=5, figsize=(40,24))  # 4 subplots for 4 animations
+
+    # Clip values between 0 and 1
+    states = states.clip(0, 1)
+
+    # Create an array to hold your image objects
+    ims = []
+    
+    titles = list(np.arange(5, 17, 1))
+    titles.insert(0, "Without pruning")
+
+    for j in range(13):  # loop over your new dimension
+         
+        a = states[0, 0]  # the initial state for each animation
+     
+        im = axs[j//5, j%5].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
+        axs[j//5, j%5].axis('off')
+        axs[j//5, j%5].set_title(titles[j], fontsize = 30)
+        ims.append(im)
+        
+    axs[2, 3].axis('off')
+    axs[2, 4].axis('off')
+    
+    plt.tight_layout()
+
+    def animate_func(i):
+        if i % fps == 0:
+            print('.', end ='')
+        
+        for j in range(13):  # loop over your new dimension
+            ims[j].set_array(states[j, i])  # update each animation
+            
+
+        return ims
+
+    anim = animation.FuncAnimation(
+                                fig, 
+                                animate_func, 
+                                frames = iterations,
+                                interval = 1000 / fps, # in ms
+                                )
+
+    anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
+
+    print(' Pruning animation done!')
     
 def plot_parameter_sizes(model_name: str, filename: str):
 
     model = torch.load(f"./models/{model_name}/final_weights.pt")
-    model.env_output = False
+    
+    # Get parameters
     params = [x.data for x in model.parameters()]
     
     # Average over all weights for each channel to give array of length num_channels

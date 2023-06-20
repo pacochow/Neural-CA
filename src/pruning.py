@@ -2,9 +2,7 @@ import torch
 import torch.nn as nn
 import copy
 import numpy as np
-from helpers.helpers import state_to_image
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 def prune_network(model: nn.Module, threshold: float) -> nn.Module:
   """
@@ -94,3 +92,18 @@ def compute_pruning_losses(model_name: str, grid, iterations: int, angle: float 
   
   percents = [0]+list(percents)
   return percents, losses
+
+
+def prune_by_channel(model: nn.Module, channel: int) -> nn.Module:
+  
+  model_copy = copy.deepcopy(model)
+  
+  # Get parameters
+  params = [x.data for x in model_copy.parameters()]
+  
+  # Prune weights below the threshold
+  with torch.no_grad():
+    params[2][channel] = 0
+    params[3][channel] = 0
+
+  return model_copy

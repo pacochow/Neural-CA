@@ -13,7 +13,7 @@ angle = 0.0
 # Load model
 model_name = 'env_circle_16_1'
 model = torch.load(f"./models/{model_name}/final_weights.pt")
-
+model.env_output = False
 
 # Initialise grid
 grid_size = model.grid_size
@@ -24,9 +24,29 @@ env = None
 env = grid.init_env(model.env_channels)
 env = grid.add_env(env, "circle", 0)
 
+filename = f"./models/{model_name}/visualize_pruning_by_channel.mp4"
+visualize_pruning_by_channel(model, grid, iterations, nSeconds, filename, destroy = True, angle = angle, env = env)
+
+# # Prune by channel
+# channel = 8
+# pruned_model = prune_by_channel(model, channel-1)
+
+# # Run model
+# state_history, _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
+
+# # Create animation
+# filename = f"./models/{model_name}/pruned_channel_{channel}_run.mp4"
+# create_animation(state_history, _, iterations, nSeconds, filename)
+
 # Visualise progress animation
-filename = f"./models/{model_name}/pruned_visualization.mp4"
-visualize_pruning(model_name, grid, iterations, nSeconds, filename = filename, angle = angle, env = env)
+# filename = f"./models/{model_name}/pruned_visualization.mp4"
+# visualize_pruning(model_name, grid, iterations, nSeconds, filename = filename, angle = angle, env = env)
+
+
+
+
+
+
 
 # model_name_2 = 'env_circle_16_1'
 # model2 = torch.load(f"./models/{model_name_2}/final_weights.pt")
@@ -44,9 +64,4 @@ visualize_pruning(model_name, grid, iterations, nSeconds, filename = filename, a
 # percent = 23
 # model_size, pruned_size, pruned_model = prune_by_percent(model, percent=percent)
 
-# # Run model
-# state_history = grid.run(pruned_model, iterations, destroy_type = 0, destroy = True, angle = angle, env = env)
 
-# # Create animation
-# filename = f"./models/{model_name}/pruned_run.mp4"
-# create_animation(state_history, iterations, nSeconds, filename)

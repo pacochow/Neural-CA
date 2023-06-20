@@ -41,7 +41,7 @@ class Grid:
         Run model and save state history
         """
         state_grid = self.init_seed(self.grid_size, seed)
-        state_history = np.zeros((iterations, self.grid_size, self.grid_size, 4))
+        state_history = np.zeros((iterations, self.grid_size, self.grid_size, model.model_channels))
         env_history = np.zeros((iterations, model.env_channels, self.grid_size, self.grid_size))
         new_env = copy.deepcopy(env)
         for t in range(iterations):
@@ -56,7 +56,7 @@ class Grid:
             with torch.no_grad():
                 # Visualize state
                 transformed_img = state_to_image(state_grid)[0]
-                state_history[t] = transformed_img.detach().numpy().reshape(self.grid_size, self.grid_size, 4)
+                state_history[t] = transformed_img.detach().numpy()
                 
                 # Update step
                 state_grid, env = model.update(state_grid, env, angle = angle)
@@ -146,9 +146,32 @@ class Grid:
             return env
         elif type == 'free_move':
             
-            center = (20, 20)
-            angle = -45
+            if t <= 135:
+                angle = t-45
+                center = (self.grid_size/2, self.grid_size/2)
+            
+            elif 136<t <= 200:
+                angle = 90
+                center = (self.grid_size/2, self.grid_size/2)
+            elif 201 < t <= 227:
+                angle = 90
+                mid = t-152
+                center = (mid, self.grid_size/2)
+            elif 228<t<=300:
+                angle = 90
+                center = (75, self.grid_size/2)
+            
+            elif 301 < t <= 352:
+                angle = 90
+                mid = 377-t
+                center = (mid, self.grid_size/2)
+            else:
+                angle = 90
+                center = (25, self.grid_size/2)
+                
+            
             env = self.add_env(env, type = 'directional', channel = 0, angle = angle, center = center)
+            return env
         else:
             return env
 

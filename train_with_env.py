@@ -14,31 +14,34 @@ target_img = pad_image(img, grid_size)
 
 # Parameters
 model_channels = 16
-env_channels = 1
+env_channels = 2
 fire_rate = 0.5
 n_epochs = 8000
-env_output = True
 dynamic_env = False
+env_output = False
+modulate = True
+
+model_name = "modulated_env_circle_16_1"
 
 
 # Initialise model and grid
 torch.manual_seed(0)
 np.random.seed(0)
-model = Env_CA(target_img, grid_size, model_channels, env_channels, fire_rate, env_output = env_output)
+model = Env_CA(target_img, grid_size, model_channels, env_channels, fire_rate, 
+               env_output = env_output)
 
 grid = Grid(grid_size, model_channels)
 
 # Initialise names and environment
 if env_channels == 0:
-    model_name = f"standard_{model_channels}"
     env = None
 else:
-    model_name = f"env_{model_channels}_{env_channels}"
     env = grid.init_env(env_channels)
     # env = grid.add_env(env, "linear", channel = 0)
     env = grid.add_env(env, "circle", channel = 0)
 
-# Train model
-model_losses = train(
-    model, grid, n_epochs, model_name = model_name, batch_size = 8, pool_size = 1024, 
-    regenerate = True, env = env, dynamic_env = dynamic_env)
+# # Train model
+# model_losses = train(
+#     model, grid, n_epochs, model_name = model_name, batch_size = 8, pool_size = 1024, 
+#     regenerate = True, env = env, dynamic_env = dynamic_env, modulate = modulate)
+
