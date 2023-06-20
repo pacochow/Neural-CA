@@ -10,12 +10,15 @@ import copy
     
     
 def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: int = 8, pool_size: int = 1024, 
-          regenerate: bool = True, env: torch.Tensor = None, dynamic_env: bool = False, modulate: bool = False):
+          regenerate: bool = True, env: torch.Tensor = None, dynamic_env: bool = False, modulate: bool = False,
+          angle_target: bool = False):
     """ 
     Train with pool. 
     Set regenerate = True to train regeneration capabilities. 
     Set env = None to train without environment. 
     Set dynamic_env = True to train with dynamic environment. 
+    Set modulate = True to train with environment modulated by a channel.
+    Set angle_target = True to train with targets rotated. 
     """
     
     # Define optimizer and scheduler
@@ -32,9 +35,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     
     pbar = tqdm(total = n_epochs+1)
     
-    # Make env have dimensions (n, env_channels, grid_size, grid_size)
-    if env is not None:
-        env = env.repeat(batch_size, 1, 1, 1)
+
         
     for epoch in range(n_epochs+1):
         
@@ -62,7 +63,18 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
             # Disrupt pattern for samples with lowest 3 loss
             for i in range(1,4):
                 x0[-i] = create_circular_mask(x0[-i], grid_size)
+        
+        if angle_target == True:   
+               
+            # Randomly initialize angles
+            angles = list(np.random.uniform(0, 360, batch_size))
             
+            # Rotate images
+            target_imgs = rotate_image(model.target, angles)
+            
+        else:
+            target_imgs = model.target.unsqueeze(0).repeat(batch_size, 1, 1, 1)
+        
         # Train with sample   
         iterations = np.random.randint(64, 97)
         # Run model
@@ -71,9 +83,22 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         modulate_vals = torch.zeros(batch_size, 1, grid_size, grid_size)
         
         if env is not None:
-            
             # Make a copy of the original environment
-            new_env = copy.deepcopy(env)
+            
+            
+            if angle_target == True:
+                new_env = torch.zeros(batch_size, model.env_channels, grid_size, grid_size)
+                # Angle each environment in the batch based on initialised angles
+                for i in range(batch_size):
+                    new_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
+                                                    center = (grid_size/2, grid_size/2))
+
+            else:
+                new_env = copy.deepcopy(env)
+                new_env = new_env.repeat(batch_size, 1, 1, 1)
+            
+
+            
             for t in range(iterations):
                 
                 if modulate == True:
@@ -82,6 +107,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
                 # Get new environment
                 if dynamic_env == True:
                     new_env = grid.get_env(t, env, type = 'phase')
+                    
                 x, new_env = model.update(x, new_env)
                 modulate_vals = state_to_image(x)[..., 4].unsqueeze(1)
                 
@@ -92,7 +118,8 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Pixel-wise L2 loss
         transformed_img = state_to_image(x)[..., :4]
         
-        loss = ((transformed_img - model.target)**2).mean()
+        loss = ((transformed_img - target_imgs)**2).mean()
+
         
             
         model_losses.append(loss.item())

@@ -336,15 +336,15 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
     print(' Pruning animation done!')
 
 
-def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSeconds: int, filename: str, destroy: bool = True, angle: float = 0.0, env = None):
+def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSeconds: int, filename: str, destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, modulate: bool = False):
     
-    full_states, _ = grid.run(model, iterations, destroy = destroy, angle = angle, env = env)
+    full_states, _ = grid.run(model, iterations, destroy = destroy, angle = angle, env = env, modulate = modulate)
     states = np.zeros((13, iterations, model.grid_size, model.grid_size, 4))
     states[0] = full_states[..., :4]
 
     for i in range(4, 16):
         pruned_model = prune_by_channel(model, i)
-        full_pruned_states, _ = grid.run(pruned_model, iterations, destroy = destroy, angle = angle, env = env)
+        full_pruned_states, _ = grid.run(pruned_model, iterations, destroy = destroy, angle = angle, env = env, modulate = modulate)
         states[i-3] = full_pruned_states[...,:4]
 
     fps = iterations/nSeconds

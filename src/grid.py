@@ -18,7 +18,7 @@ class Grid:
         Initialise seed. Set center to True to initialise seed location in the center.
         Set center to any tuple to change seed location.
 
-        :return: 1, 16 channels, grid_size, grid_size
+        :return: 1, model_channels, grid_size, grid_size
         :rtype: Torch tensor array 
         """    
         
@@ -36,7 +36,7 @@ class Grid:
         return seed
     
     def run(self, model, iterations: int, destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, 
-            seed = None, dynamic_env = False, dynamic_env_type: str = None) -> np.ndarray:
+            seed = None, dynamic_env = False, dynamic_env_type: str = None, modulate: bool = False) -> np.ndarray:
         """ 
         Run model and save state history
         """
@@ -44,9 +44,14 @@ class Grid:
         state_history = np.zeros((iterations, self.grid_size, self.grid_size, model.model_channels))
         env_history = np.zeros((iterations, model.env_channels, self.grid_size, self.grid_size))
         new_env = copy.deepcopy(env)
+        
+        modulate_vals = state_grid[:, 4]
+        
         for t in range(iterations):
             
             if env is not None: 
+                if modulate == True:
+                    new_env = env*modulate_vals
                 if dynamic_env == True:
                     new_env = self.get_env(t, env, dynamic_env_type)
                 env_history[t, :, :, :] = new_env[0, :].numpy()
@@ -59,8 +64,9 @@ class Grid:
                 state_history[t] = transformed_img.detach().numpy()
                 
                 # Update step
-                state_grid, env = model.update(state_grid, env, angle = angle)
-
+                state_grid, new_env = model.update(state_grid, new_env, angle = angle)
+                modulate_vals = state_to_image(state_grid)[..., 4]
+                
                 # Disrupt pattern
                 if destroy == True and t == iterations//2:
                     state_grid = create_block_mask(state_grid, self.grid_size)

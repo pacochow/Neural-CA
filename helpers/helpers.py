@@ -6,7 +6,8 @@ import base64
 import requests
 from IPython.display import Image
 from matplotlib.colors import LinearSegmentedColormap
-
+import torch.nn.functional as F
+import math
 
 def np2pil(a):
   if a.dtype in [np.float32, np.float64]:
@@ -83,6 +84,34 @@ def state_to_image(state: torch.Tensor) -> torch.Tensor:
   """
   return state.permute(0, 2, 3, 1)
 
+
+def rotate_image(image: torch.Tensor, degrees: list) -> torch.Tensor:
+  
+  """
+  Rotates image. Takes in torch tensor with shape (grid_size, grid_size, 4) and list of angles 
+  and returns torch tensor with shape (batch_size, grid_size, grid_size, 4) with rotated images.
+  """
+
+  # img should have shape (batch_size, 4, grid_size, grid_size)
+  img = image.unsqueeze(0).repeat(len(degrees), 1, 1, 1).permute(0, 3, 1, 2)
+  
+  # convert degrees to radians
+  theta = torch.zeros(len(degrees), 2, 3)
+  for i in range(len(degrees)):
+      theta[i] = torch.tensor([
+          [math.cos(math.radians(degrees[i])), math.sin(math.radians(degrees[i])), 0],
+          [-math.sin(math.radians(degrees[i])), math.cos(math.radians(degrees[i])), 0]
+      ])
+
+  # create an affine grid
+  grid = F.affine_grid(theta, img.size(), align_corners = False)
+  
+  # apply the affine grid to the image tensor
+  img_rotated = F.grid_sample(img, grid)
+  
+  img_rotated = img_rotated.permute(0, 2, 3, 1)
+
+  return img_rotated
   
   
 def create_angular_gradient(grid_size: int, angle: float) -> torch.Tensor:
