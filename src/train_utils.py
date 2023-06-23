@@ -35,7 +35,8 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     
     pbar = tqdm(total = n_epochs+1)
     
-
+    if env is not None:
+        repeated_env = env.repeat(batch_size, 1, 1, 1)
         
     for epoch in range(n_epochs+1):
         
@@ -47,9 +48,20 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         indices = np.random.randint(pool_size, size = batch_size)
         x0 = pool[indices]
         
+        if angle_target == True:   
+               
+            # Randomly initialize angles
+            angles = list(np.random.uniform(0, 360, batch_size))
+            
+            # Rotate images
+            target_imgs = rotate_image(model.target, angles)
+            
+        else:
+            target_imgs = model.target.unsqueeze(0).repeat(batch_size, 1, 1, 1)
+        
         # Calculate loss of samples
         sample_images = state_to_image(torch.tensor(x0))[..., :4]
-        losses = ((sample_images - model.target)**2).mean(dim = [1, 2, 3])
+        losses = ((sample_images - target_imgs)**2).mean(dim = [1, 2, 3])
         
         # Sort indices of losses with highest loss first
         loss_rank = losses.numpy().argsort()[::-1]
@@ -64,17 +76,6 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
             for i in range(1,4):
                 x0[-i] = create_circular_mask(x0[-i], grid_size)
         
-        if angle_target == True:   
-               
-            # Randomly initialize angles
-            angles = list(np.random.uniform(0, 360, batch_size))
-            
-            # Rotate images
-            target_imgs = rotate_image(model.target, angles)
-            
-        else:
-            target_imgs = model.target.unsqueeze(0).repeat(batch_size, 1, 1, 1)
-        
         # Train with sample   
         iterations = np.random.randint(64, 97)
         # Run model
@@ -87,27 +88,37 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
             
             
             if angle_target == True:
-                new_env = torch.zeros(batch_size, model.env_channels, grid_size, grid_size)
+                angled_env = torch.zeros(batch_size, model.env_channels, grid_size, grid_size)
                 # Angle each environment in the batch based on initialised angles
                 for i in range(batch_size):
-                    new_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
+                    angled_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
                                                     center = (grid_size/2, grid_size/2))
-
+                    # angled_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
+                
+                new_env = copy.deepcopy(angled_env)
+            
             else:
-                new_env = copy.deepcopy(env)
-                new_env = new_env.repeat(batch_size, 1, 1, 1)
+                new_env = copy.deepcopy(repeated_env)
             
 
             
             for t in range(iterations):
                 
+                # If environment is to be modulated by a channel, modulate the given repeated environment
                 if modulate == True:
-                    new_env = modulate_vals*env
+                    new_env = modulate_vals*repeated_env
                 
                 # Get new environment
                 if dynamic_env == True:
-                    new_env = grid.get_env(t, env, type = 'phase')
                     
+                    # If we have angled targets, get new environment from angled target environments
+                    if angle_target == True:
+                        new_env = grid.get_env(t, angled_env, type = 'phase')
+                    
+                    # If we have normal targets, get new environment from given environment
+                    else:
+                        new_env = grid.get_env(t, repeated_env, type = 'phase')
+
                 x, new_env = model.update(x, new_env)
                 modulate_vals = state_to_image(x)[..., 4].unsqueeze(1)
                 
