@@ -38,6 +38,9 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     if env is not None:
         repeated_env = env.repeat(batch_size, 1, 1, 1)
         
+    # Create dictionary of all angles that were last trained with for each sample in pool
+    last_trained_angles = {i: -45 for i in range(pool_size)}
+    
     for epoch in range(n_epochs+1):
         
         optimizer.zero_grad()
@@ -49,11 +52,11 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         x0 = pool[indices]
         
         if angle_target == True:   
-               
-            # Randomly initialize angles
-            angles = list(np.random.uniform(0, 360, batch_size))
             
-            # Rotate images
+            # Get last trained angles for batch
+            angles = [last_trained_angles[key] for key in indices]
+            
+            # Rotate images by last trained angles to compute loss of samples
             target_imgs = rotate_image(model.target, angles)
             
         else:
@@ -84,11 +87,22 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         modulate_vals = torch.zeros(batch_size, 1, grid_size, grid_size)
         
         if env is not None:
-            # Make a copy of the original environment
             
             
             if angle_target == True:
+                
+                # Randomly initialize angles
+                angles = list(np.random.uniform(0, 360, batch_size))
+                
+                # Update trained angle history dictionary
+                updates = dict(zip(indices, angles))
+                last_trained_angles.update(updates)
+                
+                # Rotate images
+                target_imgs = rotate_image(model.target, angles)
+                
                 angled_env = torch.zeros(batch_size, model.env_channels, grid_size, grid_size)
+                
                 # Angle each environment in the batch based on initialised angles
                 for i in range(batch_size):
                     angled_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
