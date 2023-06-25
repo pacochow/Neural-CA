@@ -37,9 +37,9 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     
     if env is not None:
         repeated_env = env.repeat(batch_size, 1, 1, 1)
-        
-    # Create dictionary of all angles that were last trained with for each sample in pool
-    last_trained_angles = {i: -45 for i in range(pool_size)}
+    
+    # Initialize history of pool losses to 0
+    pool_losses = np.zeros(pool_size)
     
     for epoch in range(n_epochs+1):
         
@@ -51,23 +51,8 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         indices = np.random.randint(pool_size, size = batch_size)
         x0 = pool[indices]
         
-        if angle_target == True:   
-            
-            # Get last trained angles for batch
-            angles = [last_trained_angles[key] for key in indices]
-            
-            # Rotate images by last trained angles to compute loss of samples
-            target_imgs = rotate_image(model.target, angles)
-            
-        else:
-            target_imgs = model.target.unsqueeze(0).repeat(batch_size, 1, 1, 1)
-        
-        # Calculate loss of samples
-        sample_images = state_to_image(torch.tensor(x0))[..., :4]
-        losses = ((sample_images - target_imgs)**2).mean(dim = [1, 2, 3])
-        
         # Sort indices of losses with highest loss first
-        loss_rank = losses.numpy().argsort()[::-1]
+        loss_rank = pool_losses[indices].argsort()[::-1]
         x0 = x0[loss_rank]
         
         # Reseed highest loss sample
@@ -94,10 +79,6 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
                 # Randomly initialize angles
                 angles = list(np.random.uniform(0, 360, batch_size))
                 
-                # Update trained angle history dictionary
-                updates = dict(zip(indices, angles))
-                last_trained_angles.update(updates)
-                
                 # Rotate images
                 target_imgs = rotate_image(model.target, angles)
                 
@@ -112,6 +93,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
                 new_env = copy.deepcopy(angled_env)
             
             else:
+                target_imgs = model.target.unsqueeze(0).repeat(batch_size, 1, 1, 1)
                 new_env = copy.deepcopy(repeated_env)
             
 
@@ -143,11 +125,16 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Pixel-wise L2 loss
         transformed_img = state_to_image(x)[..., :4]
         
-        loss = ((transformed_img - target_imgs)**2).mean()
+        pool_loss = ((transformed_img - target_imgs)**2).mean(dim = [1, 2, 3])
+        loss = pool_loss.mean()
 
-        
+        # Update pool losses
+        pool_losses[indices] = pool_loss.detach().numpy()
             
+        # Update model loss
         model_losses.append(loss.item())
+        
+        # Compute gradients
         loss.backward()
 
         # Normalize gradients

@@ -67,11 +67,12 @@ def prune_by_percent(model: nn.Module, percent: float):
 def compute_pruning_losses(model_name: str, grid, iterations: int, angle: float = 0.0, env = None) -> tuple[list, list]:
   
   model = torch.load(f"./models/{model_name}/final_weights.pt")
-  model.env_output = False
+
   losses = []
   
   # Run model without pruning
-  states, _ = grid.run(model, iterations, destroy = True, angle = angle, env = env, )
+  full_states, _ = grid.run(model, iterations, destroy = True, angle = angle, env = env, )
+  states = full_states[..., :4]
   
   # Compute loss
   losses.append(((states[-1]-model.target.numpy())**2).mean())
@@ -83,10 +84,10 @@ def compute_pruning_losses(model_name: str, grid, iterations: int, angle: float 
       
       # Prune model
       _, _, pruned_model = prune_by_percent(model, percent=percents[i])
-      pruned_model.env_output = False
+
       # Run model
-      states, _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
-      
+      full_states, _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
+      states = full_states[..., :4]
       # Compute loss
       losses.append(((states[-1]-pruned_model.target.numpy())**2).mean())
   
@@ -94,7 +95,7 @@ def compute_pruning_losses(model_name: str, grid, iterations: int, angle: float 
   return percents, losses
 
 
-def prune_by_channel(model: nn.Module, channel: int) -> nn.Module:
+def prune_by_channel(model: nn.Module, channel: int, enhance: bool = False) -> nn.Module:
   
   model_copy = copy.deepcopy(model)
   
@@ -103,7 +104,11 @@ def prune_by_channel(model: nn.Module, channel: int) -> nn.Module:
   
   # Prune weights below the threshold
   with torch.no_grad():
-    params[2][channel] = 0
-    params[3][channel] = 0
+    if enhance == False:
+      params[2][channel] = 0
+      params[3][channel] = 0
+    else:
+      params[2][channel] = 0.01
+      params[3][channel] = 0
 
   return model_copy

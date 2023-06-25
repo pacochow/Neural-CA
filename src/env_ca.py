@@ -9,8 +9,8 @@ class Env_CA(nn.Module):
     Input: n, 48, grid_size, grid_size
     Output: n, 16, grid_size, grid_size
     """
-    def __init__(self, target: np.ndarray, grid_size: int, model_channels = 16, env_channels = 1, fire_rate = 0.5, 
-                 env_output = False):
+    def __init__(self, target: np.ndarray, grid_size: int, model_channels: int = 16, env_channels: int = 1, 
+                 hidden_units: int = 128, fire_rate: float = 0.5, env_output: bool = False):
         super(Env_CA, self).__init__()
         
         self.target = torch.tensor(target)
@@ -29,11 +29,11 @@ class Env_CA(nn.Module):
         self.input_dim = self.num_channels*3
         
         # Update network
-        self.conv1 = nn.Conv2d(self.input_dim, 128, 1)
+        self.conv1 = nn.Conv2d(self.input_dim, hidden_units, 1)
         if self.env_output == False:
-            self.conv2 = nn.Conv2d(128, self.model_channels, 1)
+            self.conv2 = nn.Conv2d(hidden_units, self.model_channels, 1)
         else:
-            self.conv2 = nn.Conv2d(128, self.num_channels, 1)
+            self.conv2 = nn.Conv2d(hidden_units, self.num_channels, 1)
         nn.init.xavier_uniform_(self.conv1.weight)
         nn.init.zeros_(self.conv1.bias)
         self.relu = nn.ReLU()

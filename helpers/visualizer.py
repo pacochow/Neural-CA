@@ -123,12 +123,17 @@ def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: 
     print(' Progress animation done!')
 
 
-def visualize_all_channels(states: np.ndarray, iterations: int, nSeconds: int, filename: str):
+def visualize_all_channels(states: np.ndarray, iterations: int, nSeconds: int, filename: str, n_channels: int):
 
     fps = iterations/nSeconds
 
+    ncols = 5
+    nrows = 4
+    n_plots = n_channels-4+1
+    
+
     # First set up the figure, the axis, and the plot elements we want to animate
-    fig, axs = plt.subplots(nrows=3, ncols=5, figsize=(40,24))  # 4 subplots for 4 animations
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  # 4 subplots for 4 animations
 
     # Clip values between 0 and 1
     states = states.clip(0, 1)
@@ -136,21 +141,22 @@ def visualize_all_channels(states: np.ndarray, iterations: int, nSeconds: int, f
     # Create an array to hold your image objects
     ims = []
     
-    titles = list(np.arange(5, 17, 1))
+    titles = list(np.arange(5, n_channels+1, 1))
     titles.insert(0, "1-4")
 
-    for j in range(13):  # loop over your new dimension
-        if j == 0:            
-            a = states[0][..., :4]  # the initial state for each animation
-        else:
-            a = states[0][..., j+3]
-        im = axs[j//5, j%5].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
-        axs[j//5, j%5].axis('off')
-        axs[j//5, j%5].set_title(titles[j], fontsize = 30)
-        ims.append(im)
-        
-    axs[2, 3].axis('off')
-    axs[2, 4].axis('off')
+    for j in range(nrows*ncols):  # loop over your new dimension
+
+        if j < n_plots:
+            if j == 0:            
+                a = states[0][..., :4]  # the initial state for each animation
+            else:
+                a = states[0][..., j+3]
+            im = axs[j//ncols, j%ncols].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
+            
+            axs[j//ncols, j%ncols].set_title(titles[j], fontsize = 40)
+            ims.append(im)
+        axs[j//ncols, j%ncols].axis('off')
+
     
     plt.tight_layout()
 
@@ -158,7 +164,7 @@ def visualize_all_channels(states: np.ndarray, iterations: int, nSeconds: int, f
         if i % fps == 0:
             print('.', end ='')
         
-        for j in range(13):  # loop over your new dimension
+        for j in range(n_plots):  # loop over your new dimension
             if j == 0:
                 ims[j].set_array(states[i][..., :4])  # update each animation
             else:
@@ -266,7 +272,7 @@ def comparing_pruning_losses(model1: str, grid1, env1, model2: str, grid2, env2,
     plt.savefig(filename)
     
     
-def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, filename: str, angle: float = 0.0, env = None):
+def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, filename: str, angle: float = 0.0, env = None, modulate: bool = False):
     
     model = torch.load(f"./models/{model_name}/final_weights.pt")
     
@@ -275,7 +281,7 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
     states = np.zeros((6, iterations, grid_size, grid_size, 4))
 
     # Run model without pruning
-    full_states, _ = grid.run(model, iterations, destroy = True, angle = angle, env = env)
+    full_states, _ = grid.run(model, iterations, destroy = True, angle = angle, env = env, modulate = modulate)
     states[0] = full_states[...,:4]
     
     # Run model after pruning each percent
@@ -290,7 +296,7 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
         pruned_percents.append(pruned_percentage)
         
         # Run model
-        full_states, _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
+        full_states, _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env, modulate = modulate)
         states[i+1] = full_states[...,:4]
         
     fps = iterations/nSeconds
@@ -336,21 +342,30 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
     print(' Pruning animation done!')
 
 
-def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSeconds: int, filename: str, destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, modulate: bool = False):
+def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSeconds: int, filename: str, 
+                                 destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, 
+                                 modulate: bool = False, enhance: bool = False):
+    
+    fps = iterations/nSeconds
+    n_channels = model.model_channels
+    ncols = 5
+    nrows = 4
+    n_plots = n_channels-4+1
     
     full_states, _ = grid.run(model, iterations, destroy = destroy, angle = angle, env = env, modulate = modulate)
-    states = np.zeros((13, iterations, model.grid_size, model.grid_size, 4))
+    states = np.zeros((n_plots, iterations, model.grid_size, model.grid_size, 4))
     states[0] = full_states[..., :4]
-
-    for i in range(4, 16):
-        pruned_model = prune_by_channel(model, i)
+    
+    
+    for i in range(4, n_channels):
+        pruned_model = prune_by_channel(model, i, enhance = enhance)
         full_pruned_states, _ = grid.run(pruned_model, iterations, destroy = destroy, angle = angle, env = env, modulate = modulate)
         states[i-3] = full_pruned_states[...,:4]
 
-    fps = iterations/nSeconds
+
 
     # First set up the figure, the axis, and the plot elements we want to animate
-    fig, axs = plt.subplots(nrows=3, ncols=5, figsize=(40,24))  # 4 subplots for 4 animations
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  # 4 subplots for 4 animations
 
     # Clip values between 0 and 1
     states = states.clip(0, 1)
@@ -358,20 +373,18 @@ def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSecon
     # Create an array to hold your image objects
     ims = []
     
-    titles = list(np.arange(5, 17, 1))
+    titles = list(np.arange(5, n_channels+1, 1))
     titles.insert(0, "Without pruning")
 
-    for j in range(13):  # loop over your new dimension
-         
-        a = states[0, 0]  # the initial state for each animation
-     
-        im = axs[j//5, j%5].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
-        axs[j//5, j%5].axis('off')
-        axs[j//5, j%5].set_title(titles[j], fontsize = 30)
-        ims.append(im)
+    for j in range(nrows*ncols):  # loop over your new dimension
+        if j < n_plots:
+            a = states[0, 0]  # the initial state for each animation
         
-    axs[2, 3].axis('off')
-    axs[2, 4].axis('off')
+            im = axs[j//ncols, j%ncols].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
+            
+            axs[j//ncols, j%ncols].set_title(titles[j], fontsize = 40)
+            ims.append(im)
+        axs[j//ncols, j%ncols].axis('off')      
     
     plt.tight_layout()
 
@@ -379,7 +392,7 @@ def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSecon
         if i % fps == 0:
             print('.', end ='')
         
-        for j in range(13):  # loop over your new dimension
+        for j in range(n_plots):  # loop over your new dimension
             ims[j].set_array(states[j, i])  # update each animation
             
 

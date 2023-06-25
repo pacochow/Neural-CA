@@ -150,7 +150,7 @@ class Grid:
             angle = t-45
             env = self.add_env(env, type = 'directional', channel = 0, angle = angle, center = (self.grid_size/2, self.grid_size/2))
             return env
-        elif type == 'free_move':
+        elif type == 'free move':
             
             if t <= 135:
                 angle = t-45
