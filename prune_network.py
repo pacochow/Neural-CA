@@ -11,9 +11,10 @@ angle = 0.0
 
 
 # Load model
-model_name = 'env_circle_16_1'
+model_name = 'angled_env_directional_20_2'
 model = torch.load(f"./models/{model_name}/final_weights.pt")
-model.env_output = False
+# model.env_output = False
+modulate = False
 
 # Initialise grid
 grid_size = model.grid_size
@@ -22,10 +23,12 @@ grid = Grid(grid_size, model.model_channels)
 # Initialise environment
 env = None
 env = grid.init_env(model.env_channels)
-env = grid.add_env(env, "circle", 0)
+# env = grid.add_env(env, "circle", 0)
+env = grid.add_env(env, "directional", 0, angle = -45)
 
-filename = f"./models/{model_name}/visualize_pruning_by_channel.mp4"
-visualize_pruning_by_channel(model, grid, iterations, nSeconds, filename, destroy = True, angle = angle, env = env)
+filename = f"./models/{model_name}/visualize_pruning_by_channel_2.mp4"
+visualize_pruning_by_channel(model, grid, iterations, nSeconds, filename, destroy = True, 
+                             angle = angle, env = env, modulate = modulate, enhance = False)
 
 # # Prune by channel
 # channel = 8
@@ -40,7 +43,7 @@ visualize_pruning_by_channel(model, grid, iterations, nSeconds, filename, destro
 
 # Visualise progress animation
 # filename = f"./models/{model_name}/pruned_visualization.mp4"
-# visualize_pruning(model_name, grid, iterations, nSeconds, filename = filename, angle = angle, env = env)
+# visualize_pruning(model_name, grid, iterations, nSeconds, filename = filename, angle = angle, env = env, modulate = True)
 
 
 
