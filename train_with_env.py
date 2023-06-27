@@ -1,4 +1,4 @@
-from src.env_ca import *
+import src.env_ca
 from src.train_utils import train
 from src.grid import *
 from helpers.helpers import * 
@@ -31,7 +31,7 @@ model_name = "angled_env_directional_2_16_2"
 # Initialise model and grid
 torch.manual_seed(0)
 np.random.seed(0)
-model = Env_CA(target_img, grid_size, model_channels, env_channels, hidden_units, 
+model = src.env_ca.Env_CA(target_img, grid_size, model_channels, env_channels, hidden_units, 
                fire_rate, env_output = env_output)
 
 grid = Grid(grid_size, model_channels)
