@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 # Get target image
-# target_emoji = "🦎" #@param {type:"string"}
+
 img_size = 40
 # img = load_emoji(target_emoji, img_size)
 grid_size = 50
