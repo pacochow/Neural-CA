@@ -23,7 +23,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     
     # Define optimizer and scheduler
     optimizer = optim.Adam(model.parameters(), lr = 2e-3, eps = 1e-7)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = [2000], gamma = 0.1)
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = [2000, 5000], gamma = 0.1)
     
     grid_size = grid.grid_size
     

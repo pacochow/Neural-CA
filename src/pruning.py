@@ -105,10 +105,10 @@ def prune_by_channel(model: nn.Module, channel: int, enhance: bool = False) -> n
   # Prune weights below the threshold
   with torch.no_grad():
     if enhance == False:
-      params[2][channel] = 0
-      params[3][channel] = 0
+      params[-2][channel] = 0
+      params[-1][channel] = 0
     else:
-      params[2][channel] = 0.01
-      params[3][channel] = 0
+      params[-2][channel] = 0.01
+      params[-1][channel] = 0
 
   return model_copy

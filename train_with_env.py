@@ -6,16 +6,18 @@ import numpy as np
 import torch
 
 # Get target image
-target_emoji = "🦎" #@param {type:"string"}
+# target_emoji = "🦎" #@param {type:"string"}
 img_size = 40
+# img = load_emoji(target_emoji, img_size)
 grid_size = 50
-img = load_emoji(target_emoji, img_size)
+
+img = np.load("./media/gecko.npy")
 target_img = pad_image(img, grid_size)
 
 # Parameters
 model_channels = 16
 env_channels = 2
-hidden_units = 256
+hidden_units = 128
 fire_rate = 0.5
 n_epochs = 8000
 dynamic_env = False
@@ -23,7 +25,7 @@ env_output = False
 modulate = False
 angle_target = True
 
-model_name = "angled_env_directional_16_2_256"
+model_name = "angled_env_directional_2_16_2"
 
 
 # Initialise model and grid
@@ -47,3 +49,4 @@ else:
 model_losses = train(
     model, grid, n_epochs, model_name = model_name, batch_size = 8, pool_size = 1024, 
     regenerate = True, env = env, dynamic_env = dynamic_env, modulate = modulate, angle_target = angle_target)
+

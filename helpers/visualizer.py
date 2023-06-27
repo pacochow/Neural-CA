@@ -128,7 +128,7 @@ def visualize_all_channels(states: np.ndarray, iterations: int, nSeconds: int, f
     fps = iterations/nSeconds
 
     ncols = 5
-    nrows = 4
+    nrows = 3
     n_plots = n_channels-4+1
     
 
@@ -349,7 +349,7 @@ def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSecon
     fps = iterations/nSeconds
     n_channels = model.model_channels
     ncols = 5
-    nrows = 4
+    nrows = 3
     n_plots = n_channels-4+1
     
     full_states, _ = grid.run(model, iterations, destroy = destroy, angle = angle, env = env, modulate = modulate)

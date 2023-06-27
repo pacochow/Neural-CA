@@ -10,7 +10,7 @@ nSeconds = 10
 angle = 0.0
 
 # Load model
-model_name = 'angled_env_directional_20_2'
+model_name = 'angled_env_directional_2_16_2'
 model = torch.load(f"./models/{model_name}/final_weights.pt")
 
 # Initialise grid
