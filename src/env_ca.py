@@ -8,8 +8,7 @@ class Env_CA(nn.Module):
     Input: n, 48, grid_size, grid_size
     Output: n, 16, grid_size, grid_size
     """
-    def __init__(self, target: np.ndarray, grid_size: int, model_channels: int = 16, env_channels: int = 1, 
-                 hidden_units: int = 128, fire_rate: float = 0.5, env_output: bool = False):
+    def __init__(self, target: np.ndarray, grid_size: int, model_channels: int = 16, env_channels: int = 1, hidden_units: int = 128, fire_rate: float = 0.5, env_output: bool = False):
         super(Env_CA, self).__init__()
         
         self.target = torch.tensor(target)
