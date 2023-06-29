@@ -26,7 +26,6 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         device = torch.device("cpu")
         
     model = model.to(device)
-    model.target = model.target.to(device)
     
     # Define optimizer and scheduler
     optimizer = optim.Adam(model.parameters(), lr = 2e-3, eps = 1e-7)
@@ -102,7 +101,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
                 new_env = copy.deepcopy(angled_env)
             
             else:
-                target_imgs = model.target.unsqueeze(0).repeat(batch_size, 1, 1, 1)
+                target_imgs = model.target.unsqueeze(0).repeat(batch_size, 1, 1, 1).to(device)
                 new_env = copy.deepcopy(repeated_env)
             
 
