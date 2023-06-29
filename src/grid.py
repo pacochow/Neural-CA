@@ -110,8 +110,18 @@ class Grid:
         elif type == "directional":
             dist = np.sqrt(50)
             angle = angle*np.pi/180
-            env[:, channel] = create_circular_gradient(self.grid_size, (center[0]+dist*np.sin(angle), center[1]+dist*np.cos(np.pi+angle)), circle_radius = 15)
-            env[:, channel+1] = create_circular_gradient(self.grid_size, (center[0]+dist*np.sin(np.pi+angle), center[1]+dist*np.cos(angle)), circle_radius = 15)
+            env[:, channel] = create_circular_gradient(
+                self.grid_size, (center[0]+dist*np.sin(angle), center[1]+dist*np.cos(np.pi+angle)), circle_radius = 15)
+            env[:, channel+1] = create_circular_gradient(
+                self.grid_size, (center[0]+dist*np.sin(np.pi+angle), center[1]+dist*np.cos(angle)), circle_radius = 15)
+        elif type == "directional proportional":
+  
+            dist = np.sqrt(50)*self.grid_size/50
+            angle = angle*np.pi/180
+            env[:, channel] = create_circular_gradient(
+                self.grid_size, (center[0]+dist*np.sin(angle), center[0]+dist*np.cos(np.pi+angle)), 0.3*self.grid_size)
+            env[:, channel+1] = create_circular_gradient(
+                self.grid_size, (center[1]+dist*np.sin(np.pi+angle), center[1]+dist*np.cos(angle)), 0.3*self.grid_size)
             
         return env
     

@@ -23,7 +23,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     
     # Define optimizer and scheduler
     optimizer = optim.Adam(model.parameters(), lr = 2e-3, eps = 1e-7)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = [2000, 5000], gamma = 0.1)
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = [2000], gamma = 0.1)
     
     grid_size = grid.grid_size
     
@@ -33,6 +33,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     
     model_losses = []
     
+    # Initialise progress bar
     pbar = tqdm(total = n_epochs+1)
     
     if env is not None:
@@ -151,7 +152,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Visualise progress
         pbar.set_description("Loss: %.4f" % np.log10(loss.item()))
         pbar.update()
-        if epoch%100 == 0:
+        if epoch%5 == 0:
             visualize_training(epoch, model_losses, torch.tensor(x0), x)
            
         # Save progress 

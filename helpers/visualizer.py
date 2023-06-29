@@ -199,7 +199,7 @@ def visualize_batch(axs, x0, x):
     for ax in axs.ravel():
         ax.axis('off')
 
-    for i in range(8):
+    for i in range(x0.shape[0]):
         axs[0, i].imshow(x0[i])  
         axs[1, i].imshow(x[i])  
         
@@ -215,10 +215,10 @@ def visualize_training(epoch, loss, x0, x):
     plot_log_loss(ax0, epoch, loss)  # Log loss plot in the first subplot
 
     # Create subplots for images
-    gs1 = gridspec.GridSpecFromSubplotSpec(2, 8, subplot_spec=gs[1:])
-    axs = np.empty((2,8), dtype=object)
+    gs1 = gridspec.GridSpecFromSubplotSpec(2, x0.shape[0], subplot_spec=gs[1:])
+    axs = np.empty((2,x0.shape[0]), dtype=object)
     for i in range(2):
-        for j in range(8):
+        for j in range(x0.shape[0]):
             axs[i, j] = fig.add_subplot(gs1[i, j])
     
     visualize_batch(axs, x0, x)  # Images plot in the second subplot
