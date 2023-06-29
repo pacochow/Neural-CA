@@ -35,8 +35,8 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     grid_size = grid.grid_size
     
     # Initialise pool
-    seed = grid.init_seed(grid_size).numpy()
-    pool = np.repeat(seed, pool_size, axis = 0)
+    seed = grid.init_seed(grid_size).to(device)
+    pool = seed.repeat(pool_size, 1, 1, 1)
     
     model_losses = []
     
@@ -47,7 +47,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         repeated_env = env.repeat(batch_size, 1, 1, 1)
     
     # Initialize history of pool losses to 0
-    pool_losses = np.zeros(pool_size)
+    pool_losses = torch.zeros(pool_size)
     
     for epoch in range(n_epochs+1):
         
@@ -60,7 +60,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         x0 = pool[indices]
         
         # Sort indices of losses with highest loss first
-        loss_rank = pool_losses[indices].argsort()[::-1]
+        loss_rank = pool_losses[indices].argsort(descending = True)
         x0 = x0[loss_rank]
         
         # Reseed highest loss sample
@@ -75,7 +75,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Train with sample   
         iterations = np.random.randint(64, 97)
         # Run model
-        x = torch.Tensor(x0).to(device)
+        x = x0
         
         modulate_vals = torch.zeros(batch_size, 1, grid_size, grid_size)
         
@@ -137,7 +137,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         loss = pool_loss.mean()
 
         # Update pool losses
-        pool_losses[indices] = pool_loss.detach().numpy()
+        pool_losses[indices] = pool_loss.detach()
             
         # Update model loss
         model_losses.append(loss.item())
@@ -159,7 +159,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Visualise progress
         pbar.set_description("Loss: %.4f" % np.log10(loss.item()))
         pbar.update()
-        if epoch%100 == 0:
+        if epoch%5 == 0:
             visualize_training(epoch, model_losses, torch.tensor(x0), x)
            
         # Save progress 
@@ -177,17 +177,17 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     
         
 # Pattern disruption
-def create_circular_mask(grid, grid_size: int, center_radius: float = 8.0):
+def create_circular_mask(grid: torch.Tensor, grid_size: int, center_radius: float = 8.0) -> torch.Tensor:
     """
     Returns masked out grid
 
     :param grid: n, 16, 28, 28
-    :type grid: Numpy array
+    :type grid: Torch tensor
     :type grid_size: int
     :param center_radius: Radius of where center of mask is located, defaults to 8
     :type center_radius: float, optional
     :return: Masked out grid
-    :rtype: Numpy array
+    :rtype: Torch tensor
     """
     # Create mask
     center = np.random.randint(grid_size//2 - center_radius, grid_size//2 + center_radius, size = 2)
@@ -199,7 +199,7 @@ def create_circular_mask(grid, grid_size: int, center_radius: float = 8.0):
     mask = dist_from_center <= mask_radius
     
     # Mask out grid
-    grid = grid*(1-mask)
+    grid = grid*torch.tensor(1-mask)
     return grid
 
 def create_block_mask(grid, grid_size: int, type: int = 0, mask_size: float = 4.0):
