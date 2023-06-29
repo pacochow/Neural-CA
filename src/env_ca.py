@@ -38,6 +38,12 @@ class Env_CA(nn.Module):
         self.relu = nn.ReLU()
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
+        
+        
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda:0")
+        else:
+            self.device = torch.device("cpu")
 
 
     def forward(self, x: torch.Tensor):
@@ -70,7 +76,7 @@ class Env_CA(nn.Module):
         kernel = kernel_stack.unsqueeze(1)
         
         # Repeat kernels to form num_channels x 1 x 3 x 3 filter
-        kernel = kernel.repeat(self.num_channels, 1, 1, 1).float()
+        kernel = kernel.repeat(self.num_channels, 1, 1, 1).float().to(self.device)
 
         state_repeated = state_grid.repeat_interleave(kernel_stack.shape[0],dim = 1)
         

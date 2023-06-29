@@ -99,11 +99,11 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
                                                     center = (grid_size/2, grid_size/2))
                     # angled_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
                 
-                new_env = copy.deepcopy(angled_env).to(device)
+                new_env = copy.deepcopy(angled_env)
             
             else:
                 target_imgs = model.target.unsqueeze(0).repeat(batch_size, 1, 1, 1).to(device)
-                new_env = copy.deepcopy(repeated_env).to(device)
+                new_env = copy.deepcopy(repeated_env)
             
 
             
