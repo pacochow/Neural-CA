@@ -26,6 +26,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         device = torch.device("cpu")
         
     model = model.to(device)
+    grid = grid.to(device)
     env = env.to(device)
     
     # Define optimizer and scheduler
