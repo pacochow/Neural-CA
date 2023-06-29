@@ -26,7 +26,6 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         device = torch.device("cpu")
         
     model = model.to(device)
-    grid = grid.to(device)
     env = env.to(device)
     
     # Define optimizer and scheduler
@@ -92,7 +91,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
                 # Rotate images
                 target_imgs = rotate_image(model.target, angles).to(device)
                 
-                angled_env = torch.zeros(batch_size, model.env_channels, grid_size, grid_size)
+                angled_env = torch.zeros(batch_size, model.env_channels, grid_size, grid_size).to(device)
                 
                 # Angle each environment in the batch based on initialised angles
                 for i in range(batch_size):
