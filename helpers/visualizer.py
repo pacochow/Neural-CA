@@ -192,8 +192,8 @@ def plot_log_loss(ax, epoch, loss):
     ax.scatter(list(range(epoch+1)), np.log10(loss), marker = '.', alpha = 0.3)
 
 def visualize_batch(axs, x0, x):
-    x0 = state_to_image(x0)[..., :4].detach().numpy().clip(0, 1)
-    x = state_to_image(x)[..., :4].detach().numpy().clip(0, 1)
+    x0 = state_to_image(x0)[..., :4].detach().cpu().numpy().clip(0, 1)
+    x = state_to_image(x)[..., :4].detach().cpu().numpy().clip(0, 1)
 
     # Remove axes for all subplots
     for ax in axs.ravel():
