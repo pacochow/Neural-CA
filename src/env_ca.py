@@ -98,7 +98,7 @@ class Env_CA(nn.Module):
         size = ds_grid.shape[-1]
         
         # Random mask 
-        rand_mask = (torch.rand(ds_grid.shape[0], 1, size,size)<=self.fire_rate)
+        rand_mask = (torch.rand(ds_grid.shape[0], 1, size,size)<=self.fire_rate).to(self.device)
         
         # Apply same random mask to every channel of same position
         rand_mask = rand_mask.repeat(1, grid.shape[1], 1, 1)
