@@ -29,7 +29,6 @@ class Env_CA(nn.Module):
         
         # Update network
         self.conv1 = nn.Conv2d(self.input_dim, hidden_units, 1)
-        # self.extra = nn.Conv2d(hidden_units, 77, 1)
         if self.env_output == False:
             self.conv2 = nn.Conv2d(hidden_units, self.model_channels, 1)
         else:
@@ -39,13 +38,10 @@ class Env_CA(nn.Module):
         self.relu = nn.ReLU()
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
-        
-        # nn.init.xavier_uniform_(self.extra.weight)
-        # nn.init.zeros_(self.extra.bias)
+
 
     def forward(self, x: torch.Tensor):
         out = self.relu(self.conv1(x))
-        # out = self.relu(self.extra(out))
         out = self.conv2(out)
         
         return out

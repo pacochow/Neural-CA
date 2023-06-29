@@ -20,6 +20,13 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     Set modulate = True to train with environment modulated by a channel.
     Set angle_target = True to train with targets rotated. 
     """
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
+    else:
+        device = torch.device("cpu")
+        
+    model = model.to(device)
+    model.target = model.target.to(device)
     
     # Define optimizer and scheduler
     optimizer = optim.Adam(model.parameters(), lr = 2e-3, eps = 1e-7)
@@ -68,7 +75,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Train with sample   
         iterations = np.random.randint(64, 97)
         # Run model
-        x = torch.Tensor(x0)
+        x = torch.Tensor(x0).to(device)
         
         modulate_vals = torch.zeros(batch_size, 1, grid_size, grid_size)
         
@@ -152,7 +159,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Visualise progress
         pbar.set_description("Loss: %.4f" % np.log10(loss.item()))
         pbar.update()
-        if epoch%5 == 0:
+        if epoch%100 == 0:
             visualize_training(epoch, model_losses, torch.tensor(x0), x)
            
         # Save progress 
