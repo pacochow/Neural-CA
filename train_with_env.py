@@ -17,7 +17,7 @@ target_img = pad_image(img, grid_size)
 # Parameters
 model_channels = 16
 env_channels = 2
-hidden_units = 128
+hidden_units = 256
 fire_rate = 0.5
 n_epochs = 8000
 dynamic_env = False
@@ -25,7 +25,7 @@ env_output = False
 modulate = False
 angle_target = True
 
-model_name = "angled_env_directional_2_16_2"
+model_name = "trial_angled_env_directional_16_2_256"
 
 
 # Initialise model and grid
