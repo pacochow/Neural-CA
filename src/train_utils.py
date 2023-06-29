@@ -47,7 +47,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         repeated_env = env.repeat(batch_size, 1, 1, 1)
     
     # Initialize history of pool losses to 0
-    pool_losses = torch.zeros(pool_size)
+    pool_losses = torch.zeros(pool_size).to(device)
     
     for epoch in range(n_epochs+1):
         
