@@ -89,7 +89,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
                 angles = list(np.random.uniform(0, 360, batch_size))
                 
                 # Rotate images
-                target_imgs = rotate_image(model.target, angles)
+                target_imgs = rotate_image(model.target, angles).to(device)
                 
                 angled_env = torch.zeros(batch_size, model.env_channels, grid_size, grid_size)
                 
