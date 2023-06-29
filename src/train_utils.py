@@ -70,7 +70,8 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
             
             # Disrupt pattern for samples with lowest 3 loss
             for i in range(1,4):
-                x0[-i] = create_circular_mask(x0[-i], grid_size)
+                mask = create_circular_mask(grid_size).to(device)
+                x0[-i]*=mask
         
         # Train with sample   
         iterations = np.random.randint(64, 97)
@@ -177,7 +178,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     
         
 # Pattern disruption
-def create_circular_mask(grid: torch.Tensor, grid_size: int, center_radius: float = 8.0) -> torch.Tensor:
+def create_circular_mask(grid_size: int, center_radius: float = 8.0) -> torch.Tensor:
     """
     Returns masked out grid
 
@@ -186,7 +187,7 @@ def create_circular_mask(grid: torch.Tensor, grid_size: int, center_radius: floa
     :type grid_size: int
     :param center_radius: Radius of where center of mask is located, defaults to 8
     :type center_radius: float, optional
-    :return: Masked out grid
+    :return: Mask
     :rtype: Torch tensor
     """
     # Create mask
@@ -198,9 +199,7 @@ def create_circular_mask(grid: torch.Tensor, grid_size: int, center_radius: floa
 
     mask = dist_from_center <= mask_radius
     
-    # Mask out grid
-    grid = grid*torch.tensor(1-mask)
-    return grid
+    return torch.tensor(1-mask)
 
 def create_block_mask(grid, grid_size: int, type: int = 0, mask_size: float = 4.0):
     """
