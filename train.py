@@ -12,9 +12,9 @@ params = {
 #   Model params
     
 'grid_size': 50,
-'model_channels': 32, 
+'model_channels': 20, 
 'env_channels': 2,       
-'hidden_units': 128,                    # Number of units in hidden layer
+'hidden_units': 200,                    # Number of units in hidden layer
 'fire_rate': 0.5,
         
 # Training params
@@ -42,7 +42,7 @@ params = ObjectView(params)
 img = np.load("./media/gecko.npy")
 target_img = pad_image(img, params.grid_size)
 
-model_name = "angled_env_directional_32_2"
+model_name = "angled_env_directional_20_2_200"
 
 
 # Initialise model and grid
@@ -64,6 +64,7 @@ else:
 # Train model
 model_losses = train(model, model_name, grid, env, params)
 
+# # Calculate number of params
 # non_zero_params = 0
 # zero_params = 0
 # for param in model.parameters():

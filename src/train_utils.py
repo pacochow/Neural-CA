@@ -24,7 +24,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
     env = env.to(device)
     
     # Define optimizer and scheduler
-    optimizer = optim.Adam(model.parameters(), lr = params.lr, eps = 1e-7)
+    optimizer = optim.Adam(model.parameters(), lr = params.lr, eps = 1e-7, weight_decay = params.decay)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = params.milestones, gamma = params.gamma)
     
     grid_size = params.grid_size

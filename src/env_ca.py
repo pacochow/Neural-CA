@@ -51,8 +51,7 @@ class Env_CA(nn.Module):
         """    
         
         # Identity filter
-        identify = np.float32([0, 1, 0])
-        identify = torch.tensor(np.outer(identify, identify))
+        identify = torch.tensor(np.outer([0, 1, 0], [0, 1, 0]))
         
         # Sobel filters
         dx = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0)  # Sobel filter
