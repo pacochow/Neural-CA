@@ -8,9 +8,9 @@ from src.pruning import *
 from tqdm import tqdm
 
 
-def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSeconds: int, filename: str, vis_env = False):
+def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params):
 
-    fps = iterations/nSeconds
+    fps = params.iterations/params.nSeconds
 
     # First set up the figure, the axis, and the plot element we want to animate
     fig = plt.figure( figsize=(8,8) )
@@ -21,7 +21,7 @@ def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSec
     b = envs[0]
 
     cm = create_colormap()
-    if vis_env == True:
+    if params.vis_env == True:
         im2 = plt.imshow(b[0], cmap = cm, interpolation = 'gaussian', aspect = 'auto', vmin = 0, vmax=1)
         if b.shape[0] > 1:
             im3 = plt.imshow(b.sum(axis = 0)/(b.sum(axis = 0).max()), cmap = cm, interpolation = 'gaussian', aspect = 'auto', vmin = 0, vmax=1)
@@ -32,7 +32,7 @@ def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSec
     def animate_func(i):
         if i % fps == 0:
             print( '.', end ='' )
-        if vis_env == True:
+        if params.vis_env == True:
             im2.set_array(envs[i, 0])
             if b.shape[0] > 1:
                 im3.set_array(envs[i].sum(axis = 0)/(b.sum(axis = 0).max()))
@@ -43,7 +43,7 @@ def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSec
     anim = animation.FuncAnimation(
                                 fig, 
                                 animate_func, 
-                                frames = iterations,
+                                frames = params.iterations,
                                 interval = 1000 / fps, # in ms
                                 )
 
@@ -52,20 +52,20 @@ def create_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSec
     print(' Full run done!')
     
 
-def load_progress_states(model_name: str, grid, iterations: int, grid_size: int, angle: float = 0.0, env = None):
+def load_progress_states(model_name: str, grid, params, env = None):
     """
     Create array of models run at each saved epoch
     """
     
     # Initialise states
-    states = np.zeros((4, iterations, grid_size, grid_size, 4))
-    envs = np.zeros((4, iterations, grid_size, grid_size))
+    states = np.zeros((4, params.iterations, params.grid_size, params.grid_size, 4))
+    envs = np.zeros((4, params.iterations, params.grid_size, params.grid_size))
     
     # Loop over all saved epochs and run model
     saved_epochs = [100, 500, 1000, 4000]
     for i in range(len(saved_epochs)):
         model = torch.load(f"./models/{model_name}/{saved_epochs[i]}.pt")
-        full_states, envs[i] = grid.run(model, iterations, destroy = True, angle = angle, env = env)
+        full_states, envs[i] = grid.run(model, env, params)
         states[i] = full_states[...,:4]
         
     return states, envs
@@ -123,9 +123,9 @@ def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: 
     print(' Progress animation done!')
 
 
-def visualize_all_channels(states: np.ndarray, iterations: int, nSeconds: int, filename: str, n_channels: int):
+def visualize_all_channels(states: np.ndarray, filename: str, n_channels: int, params):
 
-    fps = iterations/nSeconds
+    fps = params.iterations/params.nSeconds
 
     ncols = 5
     nrows = 3
@@ -176,7 +176,7 @@ def visualize_all_channels(states: np.ndarray, iterations: int, nSeconds: int, f
     anim = animation.FuncAnimation(
                                 fig, 
                                 animate_func, 
-                                frames = iterations,
+                                frames = params.iterations,
                                 interval = 1000 / fps, # in ms
                                 )
 
@@ -237,7 +237,7 @@ def save_loss_plot(n_epochs: int, model_losses: list, filename: str):
     plt.tight_layout()
     plt.savefig(filename)
     
-def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy: bool = True, angle: float = 0.0, env = None):
+def visualize_seed_losses(model_name: str, grid, filename, params, env = None):
     
     model = torch.load(f"./models/{model_name}/final_weights.pt")
     losses = np.zeros((model.grid_size, model.grid_size))
@@ -245,7 +245,7 @@ def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy: 
     for i in tqdm(range(model.grid_size)):
         for j in range(model.grid_size):
             
-            states, _ = grid.run(model, iterations, destroy = destroy, angle = angle, env = env, seed = (i, j))
+            states, _ = grid.run(model, env, params)
             states = states[...,:4]
              # Compute loss
             losses[i, j] = ((states[-1]-model.target.numpy())**2).mean()
@@ -258,10 +258,10 @@ def visualize_seed_losses(model_name: str, grid, iterations, filename, destroy: 
     plt.show()
 
 
-def comparing_pruning_losses(model1: str, grid1, env1, model2: str, grid2, env2, filename: str, iterations: int, angle: float = 0.0):
+def comparing_pruning_losses(model1: str, grid1, env1, model2: str, grid2, env2, filename: str, params):
     
-    percents, loss1 = compute_pruning_losses(model1, grid1, iterations, angle, env1)
-    percents, loss2 = compute_pruning_losses(model2, grid2, iterations, angle, env2)
+    percents, loss1 = compute_pruning_losses(model1, grid1, params.iterations, params.angle, env1)
+    percents, loss2 = compute_pruning_losses(model2, grid2, params.iterations, params.angle, env2)
     plt.scatter(percents, np.log10(loss1))
     plt.scatter(percents, np.log10(loss2))
     plt.xlabel("Pruned percentage (%)", fontsize =12)
@@ -272,16 +272,16 @@ def comparing_pruning_losses(model1: str, grid1, env1, model2: str, grid2, env2,
     plt.savefig(filename)
     
     
-def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, filename: str, angle: float = 0.0, env = None, modulate: bool = False):
+def visualize_pruning(model_name: str, grid, filename: str, params, env = None):
     
     model = torch.load(f"./models/{model_name}/final_weights.pt")
     
     grid_size = model.grid_size
     
-    states = np.zeros((6, iterations, grid_size, grid_size, 4))
+    states = np.zeros((6, params.iterations, grid_size, grid_size, 4))
 
     # Run model without pruning
-    full_states, _ = grid.run(model, iterations, destroy = True, angle = angle, env = env, modulate = modulate)
+    full_states, _ = grid.run(model, env, params)
     states[0] = full_states[...,:4]
     
     # Run model after pruning each percent
@@ -296,10 +296,10 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
         pruned_percents.append(pruned_percentage)
         
         # Run model
-        full_states, _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env, modulate = modulate)
+        full_states, _ = grid.run(pruned_model, env, params)
         states[i+1] = full_states[...,:4]
         
-    fps = iterations/nSeconds
+    fps = params.iterations/params.nSeconds
 
     # First set up the figure, the axis, and the plot elements we want to animate
     fig, axs = plt.subplots(nrows=1, ncols=6, figsize=(48,8))  # 6 subplots for 6 animations
@@ -333,7 +333,7 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
     anim = animation.FuncAnimation(
         fig, 
         animate_func, 
-        frames = iterations,
+        frames = params.iterations,
         interval = 1000 / fps, # in ms
         )
 
@@ -342,24 +342,22 @@ def visualize_pruning(model_name: str, grid, iterations: int, nSeconds: int, fil
     print(' Pruning animation done!')
 
 
-def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSeconds: int, filename: str, 
-                                 destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, 
-                                 modulate: bool = False, enhance: bool = False):
+def visualize_pruning_by_channel(model: nn.Module, grid, filename: str, params, env: torch.Tensor = None):
     
-    fps = iterations/nSeconds
+    fps = params.iterations/params.nSeconds
     n_channels = model.model_channels
     ncols = 5
     nrows = 3
     n_plots = n_channels-4+1
     
-    full_states, _ = grid.run(model, iterations, destroy = destroy, angle = angle, env = env, modulate = modulate)
-    states = np.zeros((n_plots, iterations, model.grid_size, model.grid_size, 4))
+    full_states, _ = grid.run(model, env, params)
+    states = np.zeros((n_plots, params.iterations, model.grid_size, model.grid_size, 4))
     states[0] = full_states[..., :4]
     
     
     for i in range(4, n_channels):
-        pruned_model = prune_by_channel(model, i, enhance = enhance)
-        full_pruned_states, _ = grid.run(pruned_model, iterations, destroy = destroy, angle = angle, env = env, modulate = modulate)
+        pruned_model = prune_by_channel(model, i, enhance = params.enhance)
+        full_pruned_states, _ = grid.run(pruned_model, env, params)
         states[i-3] = full_pruned_states[...,:4]
 
 
@@ -401,7 +399,7 @@ def visualize_pruning_by_channel(model: nn.Module, grid, iterations: int, nSecon
     anim = animation.FuncAnimation(
                                 fig, 
                                 animate_func, 
-                                frames = iterations,
+                                frames = params.iterations,
                                 interval = 1000 / fps, # in ms
                                 )
 

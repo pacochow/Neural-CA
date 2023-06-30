@@ -64,14 +64,14 @@ def prune_by_percent(model: nn.Module, percent: float):
     return model_size, pruned_size, pruned_model
   
   
-def compute_pruning_losses(model_name: str, grid, iterations: int, angle: float = 0.0, env = None) -> tuple:
+def compute_pruning_losses(model_name: str, grid, params, env = None) -> tuple:
   
   model = torch.load(f"./models/{model_name}/final_weights.pt")
 
   losses = []
   
   # Run model without pruning
-  full_states, _ = grid.run(model, iterations, destroy = True, angle = angle, env = env, )
+  full_states, _ = grid.run(model, env, params)
   states = full_states[..., :4]
   
   # Compute loss
@@ -86,7 +86,7 @@ def compute_pruning_losses(model_name: str, grid, iterations: int, angle: float 
       _, _, pruned_model = prune_by_percent(model, percent=percents[i])
 
       # Run model
-      full_states, _ = grid.run(pruned_model, iterations, destroy = True, angle = angle, env = env)
+      full_states, _ = grid.run(pruned_model, env, params)
       states = full_states[..., :4]
       # Compute loss
       losses.append(((states[-1]-pruned_model.target.numpy())**2).mean())

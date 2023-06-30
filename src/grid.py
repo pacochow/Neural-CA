@@ -6,12 +6,9 @@ import copy
 
 class Grid:
     
-    def __init__(self, grid_size: int, model_channels: int, env_channels: int = 0):
-        self.grid_size = grid_size
-        self.model_channels = model_channels
-        self.env_channels = env_channels
-        self.num_channels = model_channels+env_channels
-    
+    def __init__(self, params):
+        self.grid_size = params.grid_size
+        self.model_channels = params.model_channels
     
     def init_seed(self, grid_size: int, center: tuple = None) -> torch.Tensor:
         """ 
@@ -35,25 +32,24 @@ class Grid:
         
         return seed
     
-    def run(self, model, iterations: int, destroy: bool = True, angle: float = 0.0, env: torch.Tensor = None, 
-            seed = None, dynamic_env = False, dynamic_env_type: str = None, modulate: bool = False) -> np.ndarray:
+    def run(self, model, env, params) -> np.ndarray:
         """ 
         Run model and save state history
         """
-        state_grid = self.init_seed(self.grid_size, seed)
-        state_history = np.zeros((iterations, self.grid_size, self.grid_size, model.model_channels))
-        env_history = np.zeros((iterations, model.env_channels, self.grid_size, self.grid_size))
+        state_grid = self.init_seed(self.grid_size, params.seed)
+        state_history = np.zeros((params.iterations, self.grid_size, self.grid_size, model.model_channels))
+        env_history = np.zeros((params.iterations, model.env_channels, self.grid_size, self.grid_size))
         new_env = copy.deepcopy(env)
         
         modulate_vals = state_grid[:, 4]
         
-        for t in range(iterations):
+        for t in range(params.iterations):
             
             if env is not None: 
-                if modulate == True:
+                if params.modulate == True:
                     new_env = env*modulate_vals
-                if dynamic_env == True:
-                    new_env = self.get_env(t, env, dynamic_env_type)
+                if params.dynamic_env == True:
+                    new_env = self.get_env(t, env, params.dynamic_env_type)
                 env_history[t, :, :, :] = new_env[0, :].numpy()
                 
                 
@@ -64,12 +60,12 @@ class Grid:
                 state_history[t] = transformed_img.detach().numpy()
                 
                 # Update step
-                state_grid, new_env = model.update(state_grid, new_env, angle = angle)
+                state_grid, new_env = model.update(state_grid, new_env, angle = params.angle)
                 modulate_vals = state_to_image(state_grid)[..., 4]
                 
                 # Disrupt pattern
-                if destroy == True and t == iterations//2:
-                    state_grid = create_block_mask(state_grid, self.grid_size)
+                if params.destroy == True and t == params.iterations//2:
+                    state_grid = create_block_mask(state_grid, self.grid_size, type = params.destroy_type)
         
 
         return state_history, env_history

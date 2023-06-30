@@ -9,9 +9,7 @@ import copy
 
     
     
-def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: int = 8, pool_size: int = 1024, 
-          regenerate: bool = True, env: torch.Tensor = None, dynamic_env: bool = False, modulate: bool = False,
-          angle_target: bool = False):
+def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
     """ 
     Train with pool. 
     Set regenerate = True to train regeneration capabilities. 
@@ -20,43 +18,40 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     Set modulate = True to train with environment modulated by a channel.
     Set angle_target = True to train with targets rotated. 
     """
-    if torch.cuda.is_available():
-        device = torch.device("cuda:0")
-    else:
-        device = torch.device("cpu")
+    device = params.device
         
     model = model.to(device)
     env = env.to(device)
     
     # Define optimizer and scheduler
-    optimizer = optim.Adam(model.parameters(), lr = 2e-3, eps = 1e-7)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = [2000], gamma = 0.1)
+    optimizer = optim.Adam(model.parameters(), lr = params.lr, eps = 1e-7)
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones = params.milestones, gamma = params.gamma)
     
-    grid_size = grid.grid_size
+    grid_size = params.grid_size
     
     # Initialise pool
     seed = grid.init_seed(grid_size).to(device)
-    pool = seed.repeat(pool_size, 1, 1, 1)
+    pool = seed.repeat(params.pool_size, 1, 1, 1)
     
     model_losses = []
     
     # Initialise progress bar
-    pbar = tqdm(total = n_epochs+1)
+    pbar = tqdm(total = params.n_epochs+1)
     
     if env is not None:
-        repeated_env = env.repeat(batch_size, 1, 1, 1)
+        repeated_env = env.repeat(params.batch_size, 1, 1, 1)
     
     # Initialize history of pool losses to 0
-    pool_losses = torch.zeros(pool_size).to(device)
+    pool_losses = torch.zeros(params.pool_size).to(device)
     
-    for epoch in range(n_epochs+1):
+    for epoch in range(params.n_epochs+1):
         
         optimizer.zero_grad()
         
         # Sample from pool
         
         # Select indices from pool
-        indices = np.random.randint(pool_size, size = batch_size)
+        indices = np.random.randint(params.pool_size, size = params.batch_size)
         x0 = pool[indices]
         
         # Sort indices of losses with highest loss first
@@ -66,7 +61,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
         # Reseed highest loss sample
         x0[0] = seed
         
-        if regenerate == True:
+        if params.regenerate == True:
             
             # Disrupt pattern for samples with lowest 3 loss
             for i in range(1,4):
@@ -74,27 +69,27 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
                 x0[-i]*=mask
         
         # Train with sample   
-        iterations = np.random.randint(64, 97)
+        iterations = np.random.randint(params.num_steps[0], params.num_steps[1])
         # Run model
         x = x0
         
-        modulate_vals = torch.zeros(batch_size, 1, grid_size, grid_size)
+        modulate_vals = torch.zeros(params.batch_size, 1, grid_size, grid_size)
         
         if env is not None:
             
             
-            if angle_target == True:
+            if params.angle_target == True:
                 
                 # Randomly initialize angles
-                angles = list(np.random.uniform(0, 360, batch_size))
+                angles = list(np.random.uniform(0, 360, params.batch_size))
                 
                 # Rotate images
                 target_imgs = rotate_image(model.target, angles).to(device)
                 
-                angled_env = torch.zeros(batch_size, model.env_channels, grid_size, grid_size).to(device)
+                angled_env = torch.zeros(params.batch_size, model.env_channels, grid_size, grid_size).to(device)
                 
                 # Angle each environment in the batch based on initialised angles
-                for i in range(batch_size):
+                for i in range(params.batch_size):
                     angled_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
                                                     center = (grid_size/2, grid_size/2))
                     # angled_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
@@ -102,7 +97,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
                 new_env = copy.deepcopy(angled_env)
             
             else:
-                target_imgs = model.target.unsqueeze(0).repeat(batch_size, 1, 1, 1).to(device)
+                target_imgs = model.target.unsqueeze(0).repeat(params.batch_size, 1, 1, 1).to(device)
                 new_env = copy.deepcopy(repeated_env)
             
 
@@ -110,14 +105,14 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
             for t in range(iterations):
                 
                 # If environment is to be modulated by a channel, modulate the given repeated environment
-                if modulate == True:
+                if params.modulate == True:
                     new_env = modulate_vals*repeated_env
                 
                 # Get new environment
-                if dynamic_env == True:
+                if params.dynamic_env == True:
                     
                     # If we have angled targets, get new environment from angled target environments
-                    if angle_target == True:
+                    if params.angle_target == True:
                         new_env = grid.get_env(t, angled_env, type = 'phase')
                     
                     # If we have normal targets, get new environment from given environment
@@ -174,7 +169,7 @@ def train(model: nn.Module, grid, n_epochs: int, model_name: str, batch_size: in
     torch.save(model_losses, f"./models/{model_name}/losses.pt")
 
     # Save loss plot
-    save_loss_plot(n_epochs+1, model_losses, f"./models/{model_name}/loss.png")
+    save_loss_plot(params.n_epochs+1, model_losses, f"./models/{model_name}/loss.png")
     
         
 # Pattern disruption
