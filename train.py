@@ -23,9 +23,9 @@ params = {
 'pool_size': 1024,       
 'batch_size': 8,
 'lr': 2e-3,
-'milestones': [3000, 6000, 7000],       # Milestones for learning rate scheduler
-'gamma': 0.2,                           # Gamma factor for learning rate scheduler
-'decay': 3e-5,                          # Weight decay for adam
+'milestones': [4000, 6000, 7000],       # Milestones for learning rate scheduler
+'gamma': 0.25,                           # Gamma factor for learning rate scheduler
+'decay': 3e-4,                          # Weight decay for adam
 'n_epochs': 8000,
 'regenerate': True,                     # Train with regenerative properites
 'dynamic_env': False,                   # Train with dynamic environment
@@ -42,7 +42,7 @@ params = ObjectView(params)
 img = np.load("./media/gecko.npy")
 target_img = pad_image(img, params.grid_size)
 
-model_name = "angled_env_directional_20_2_200"
+model_name = "experimental"
 
 
 # Initialise model and grid
