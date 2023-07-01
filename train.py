@@ -23,9 +23,9 @@ params = {
 'pool_size': 1024,       
 'batch_size': 8,
 'lr': 2e-3,
-'milestones': [4000, 6000, 7000],       # Milestones for learning rate scheduler
-'gamma': 0.25,                           # Gamma factor for learning rate scheduler
-'decay': 3e-4,                          # Weight decay for adam
+'milestones': [3000, 6000, 7000],       # Milestones for learning rate scheduler
+'gamma': 0.5,                           # Gamma factor for learning rate scheduler
+'decay': 3e-3,                          # Weight decay for adam
 'n_epochs': 8000,
 'regenerate': True,                     # Train with regenerative properites
 'dynamic_env': False,                   # Train with dynamic environment

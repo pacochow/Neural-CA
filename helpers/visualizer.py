@@ -128,8 +128,8 @@ def visualize_all_channels(states: np.ndarray, filename: str, n_channels: int, p
     fps = params.iterations/params.nSeconds
 
     ncols = 5
-    nrows = 3
     n_plots = n_channels-4+1
+    nrows = n_plots//5+1
     
 
     # First set up the figure, the axis, and the plot elements we want to animate
@@ -347,11 +347,11 @@ def visualize_pruning_by_channel(model: nn.Module, grid, filename: str, params, 
     fps = params.iterations/params.nSeconds
     n_channels = model.model_channels
     ncols = 5
-    nrows = 3
     n_plots = n_channels-4+1
+    nrows = n_plots//ncols+1
     
     full_states, _ = grid.run(model, env, params)
-    states = np.zeros((n_plots, params.iterations, model.grid_size, model.grid_size, 4))
+    states = np.zeros((n_plots, params.iterations, grid.grid_size, grid.grid_size, 4))
     states[0] = full_states[..., :4]
     
     
