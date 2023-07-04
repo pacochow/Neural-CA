@@ -14,7 +14,7 @@ params = {
 'grid_size': 50,
 'model_channels': 16, 
 'env_channels': 2,       
-'hidden_units': 512,                    # Number of units in hidden layer
+'hidden_units': 529,                    # Number of units in hidden layer
 'fire_rate': 0.5,
         
 # Training params
@@ -64,7 +64,7 @@ else:
 # Train model
 model_losses = train(model, model_name, grid, env, params)
 
-# # Calculate number of params
+# Calculate number of params
 # non_zero_params = 0
 # zero_params = 0
 # for param in model.parameters():
