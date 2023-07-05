@@ -33,7 +33,7 @@ params = {
 'env_output': False,                    # Train with model output to environment
 'modulate': False,                      # Train with channel modulating environment visibility
 'angle_target': True,                   # Train with rotation-invariance
-'knockout': True,                       # Whether hidden unit is fixed
+'knockout': False,                       # Whether hidden unit is fixed
 'knockout_unit': 6,                     # Hidden unit to fix
 'device': device}
 
