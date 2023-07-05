@@ -79,7 +79,7 @@ class Alt_CA(nn.Module):
 
         return perception_grid
 
-    def stochastic_update(self, grid: torch.Tensor) -> torch.Tensor:
+    def stochastic_update(self, old_grid: torch.Tensor, new_grid: torch.Tensor) -> torch.Tensor:
         """ 
         Apply stochastic mask so that all cells do not update together.
 
@@ -89,16 +89,16 @@ class Alt_CA(nn.Module):
         """
         
         
-        size = grid.shape[-1]
+        size = old_grid.shape[-1]
         
         # Random mask 
-        rand_mask = (torch.rand(grid.shape[0], 1, size,size)<=self.fire_rate).to(self.device)
+        rand_mask = (torch.rand(old_grid.shape[0], 1, size,size)<=self.fire_rate).to(self.device)
         
         # Apply same random mask to every channel of same position
-        rand_mask = rand_mask.repeat(1, grid.shape[1], 1, 1)
+        rand_mask = rand_mask.repeat(1, old_grid.shape[1], 1, 1)
         
 
-        return grid*rand_mask
+        return old_grid*rand_mask + new_grid*(1-rand_mask)
 
     def alive_masking(self, state_grid: torch.Tensor) -> torch.Tensor:
         """ Returns mask for dead cells
