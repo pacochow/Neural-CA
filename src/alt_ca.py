@@ -130,20 +130,20 @@ class Alt_CA(nn.Module):
             perception_grid = self.perceive(state_grid, angle)
         
         # Apply update rule to all cells
-        state_grid = self.forward(perception_grid)
+        new_grid = self.forward(perception_grid)
 
         # Stochastic update mask
         if self.env_output == True:
             
             # If env_output = True, update full grid 
-            full_grid = self.stochastic_update(full_grid)
+            full_grid = self.stochastic_update(full_grid, new_grid)
             state_grid = full_grid[:, :self.model_channels]
             env = full_grid[:, -1].unsqueeze(1)
             
         else:
             
             # Else, only update state grid
-            state_grid = self.stochastic_update(state_grid)
+            state_grid = self.stochastic_update(state_grid, new_grid)
         
         # Post update life mask
         post_mask = self.alive_masking(state_grid)
