@@ -98,7 +98,7 @@ class Alt_CA(nn.Module):
         rand_mask = rand_mask.repeat(1, old_grid.shape[1], 1, 1)
         
 
-        return old_grid*rand_mask + new_grid*(1-rand_mask)
+        return old_grid*rand_mask + new_grid*~rand_mask
 
     def alive_masking(self, state_grid: torch.Tensor) -> torch.Tensor:
         """ Returns mask for dead cells
