@@ -1,4 +1,5 @@
 from src.env_ca import *
+from src.alt_ca import *
 from src.train_utils import train
 from src.grid import *
 from src.params import ObjectView
@@ -48,7 +49,7 @@ model_name = "experimental"
 # Initialise model and grid
 torch.manual_seed(0)
 np.random.seed(0)
-model = Env_CA(target_img, params)
+model = Alt_CA(target_img, params)
 
 grid = Grid(params)
 
