@@ -36,9 +36,13 @@ class Env_CA(nn.Module):
         nn.init.zeros_(self.conv2.bias)
         
         self.device = params.device
+        self.params = params
 
     def forward(self, x: torch.Tensor):
         out = self.relu(self.conv1(x))
+        if self.params.knockout == True:
+            out[0, self.params.knockout_unit] = 0.5
+        self.hidden_activity = out
         out = self.conv2(out)
         
         return out

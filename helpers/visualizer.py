@@ -51,6 +51,66 @@ def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params
 
     print(' Full run done!')
     
+def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filename: str, params):
+
+    fps = params.iterations/params.nSeconds
+
+    nrows = 1
+    ncols = 1+hidden_states.shape[0]
+
+    # First set up the figure, the axis, and the plot elements we want to animate
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  # 2 subplots for 2 animations
+    
+    # Clip values between 0 and 1
+    states = states.clip(0, 1)[...,:4]
+    hidden_states = hidden_states.clip(0, 1)
+    
+    # Create an array to hold your image objects
+    ims = []
+    
+    titles = [params.hidden_loc[i] for i in range(hidden_states.shape[0])]
+    
+    a = states[0]  # the initial state for each animation
+    im = axs[0].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
+    axs[0].tick_params(labelsize = 20)
+    ims.append(im)
+    
+    for j in range(hidden_states.shape[0]):
+        b = hidden_states[j, 0]
+        im2 = axs[j+1].imshow(b, interpolation = 'none', aspect = 'auto', vmin = 0, vmax = 0.5)
+        axs[j+1].set_title(titles[j], fontsize = 40)
+        axs[j+1].axis('off')
+        ims.append(im2)
+    
+    # Create colorbar for right plot
+    # cbar = fig.colorbar(im2, ax=axs[1])
+    # cbar.ax.tick_params(labelsize=14)  # Change label size here
+    
+    plt.tight_layout()
+
+    def animate_func(i):
+        if i % fps == 0:
+            print('.', end ='')
+        
+        ims[0].set_array(states[i])  # update each animation
+        
+        for j in range(hidden_states.shape[0]):
+            ims[j+1].set_array(hidden_states[j, i])
+            
+
+        return ims
+    
+    anim = animation.FuncAnimation(
+        fig, 
+        animate_func, 
+        frames = params.iterations,
+        interval = 1000 / fps, # in ms
+        )
+
+    anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
+
+    print(' Full run done!')
+    
 
 def load_progress_states(model_name: str, grid, params, env = None):
     """
@@ -65,7 +125,7 @@ def load_progress_states(model_name: str, grid, params, env = None):
     saved_epochs = [100, 500, 1000, 4000]
     for i in range(len(saved_epochs)):
         model = torch.load(f"./models/{model_name}/{saved_epochs[i]}.pt")
-        full_states, envs[i] = grid.run(model, env, params)
+        full_states, envs[i], _ = grid.run(model, env, params)
         states[i] = full_states[...,:4]
         
     return states, envs
@@ -245,7 +305,7 @@ def visualize_seed_losses(model_name: str, grid, filename, params, env = None):
     for i in tqdm(range(model.grid_size)):
         for j in range(model.grid_size):
             
-            states, _ = grid.run(model, env, params)
+            states, _, _ = grid.run(model, env, params)
             states = states[...,:4]
              # Compute loss
             losses[i, j] = ((states[-1]-model.target.numpy())**2).mean()
@@ -281,7 +341,7 @@ def visualize_pruning(model_name: str, grid, filename: str, params, env = None):
     states = np.zeros((6, params.iterations, grid_size, grid_size, 4))
 
     # Run model without pruning
-    full_states, _ = grid.run(model, env, params)
+    full_states, _, _ = grid.run(model, env, params)
     states[0] = full_states[...,:4]
     
     # Run model after pruning each percent
@@ -296,7 +356,7 @@ def visualize_pruning(model_name: str, grid, filename: str, params, env = None):
         pruned_percents.append(pruned_percentage)
         
         # Run model
-        full_states, _ = grid.run(pruned_model, env, params)
+        full_states, _, _ = grid.run(pruned_model, env, params)
         states[i+1] = full_states[...,:4]
         
     fps = params.iterations/params.nSeconds
@@ -350,14 +410,14 @@ def visualize_pruning_by_channel(model: nn.Module, grid, filename: str, params, 
     n_plots = n_channels-4+1
     nrows = n_plots//ncols+1
     
-    full_states, _ = grid.run(model, env, params)
+    full_states, _, _ = grid.run(model, env, params)
     states = np.zeros((n_plots, params.iterations, grid.grid_size, grid.grid_size, 4))
     states[0] = full_states[..., :4]
     
     
     for i in range(4, n_channels):
         pruned_model = prune_by_channel(model, i, enhance = params.enhance)
-        full_pruned_states, _ = grid.run(pruned_model, env, params)
+        full_pruned_states, _, _ = grid.run(pruned_model, env, params)
         states[i-3] = full_pruned_states[...,:4]
 
 
@@ -440,3 +500,14 @@ def plot_parameter_sizes(model_name: str, filename: str):
 
     plt.savefig(filename)
     plt.show()
+
+def visualize_unit_effect(model: nn.Module, grid, env, params, filename: str):
+    loss = prune_by_unit(model, grid, env, params)
+    units = np.arange(model.hidden_units)
+    plt.scatter(units, np.log10(loss))
+    plt.xlabel("Unit")
+    plt.ylabel("Log loss after ablation")
+    plt.savefig(filename)
+    plt.show()
+    
+    return loss

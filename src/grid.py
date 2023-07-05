@@ -43,6 +43,9 @@ class Grid:
         
         modulate_vals = state_grid[:, 4]
         
+        if params.vis_hidden == True:
+            hidden_history = np.zeros((len(params.hidden_loc), params.iterations, model.hidden_units))
+        
         for t in range(params.iterations):
             
             if env is not None: 
@@ -61,14 +64,19 @@ class Grid:
                 
                 # Update step
                 state_grid, new_env = model.update(state_grid, new_env, angle = params.angle)
+
                 modulate_vals = state_to_image(state_grid)[..., 4]
+                
+                if params.vis_hidden == True:
+                    for i in range(len(params.hidden_loc)):
+                        hidden_history[i, t] = model.hidden_activity[0, :, params.hidden_loc[i][0], params.hidden_loc[i][1]]
                 
                 # Disrupt pattern
                 if params.destroy == True and t == params.iterations//2:
                     state_grid = create_block_mask(state_grid, self.grid_size, type = params.destroy_type)
         
 
-        return state_history, env_history
+        return state_history, env_history, hidden_history
 
     
     def init_env(self, env_channels: int) -> torch.Tensor:
@@ -82,7 +90,7 @@ class Grid:
         env = torch.zeros(1, env_channels, self.grid_size, self.grid_size)
         return env
         
-    def add_env(self, env: torch.Tensor, type = 'linear', channel: int = 0, angle: float = -45.0, center: tuple = (20, 20), circle_radius: float = 20.0) -> torch.Tensor:
+    def add_env(self, env: torch.Tensor, type = 'linear', channel: int = 0, angle: float = -45.0, center: tuple = (25, 25), circle_radius: float = 20.0) -> torch.Tensor:
         """
         Add environment
 

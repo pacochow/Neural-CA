@@ -85,13 +85,16 @@ def state_to_image(state: torch.Tensor) -> torch.Tensor:
   return state.permute(0, 2, 3, 1)
 
 
-def rotate_image(image: torch.Tensor, degrees: list) -> torch.Tensor:
+def rotate_image(image: torch.Tensor, degrees) -> torch.Tensor:
   
   """
   Rotates image. Takes in torch tensor with shape (grid_size, grid_size, 4) and list of angles 
   and returns torch tensor with shape (batch_size, grid_size, grid_size, 4) with rotated images.
   """
 
+  if type(degrees) == int:
+    degrees = [degrees]
+  
   # img should have shape (batch_size, 4, grid_size, grid_size)
   img = image.unsqueeze(0).repeat(len(degrees), 1, 1, 1).permute(0, 3, 1, 2)
   
