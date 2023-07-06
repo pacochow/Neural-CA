@@ -33,7 +33,7 @@ params = ObjectView(params)
 
 
 # Load model
-model_name = "experimental"
+model_name = "angled_env_directional_16_2_529"
 model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
 
 model.params = params
@@ -53,8 +53,8 @@ env = grid.add_env(env, "directional", 0, angle = params.env_angle)
 # visualize_pruning_by_channel(model, grid, filename, params, env = env)
 
 # Prune by units
-# filename = f"./models/{model_name}/unit_effects.png"
-# losses = visualize_unit_effect(model, grid, env, params, filename)
+filename = f"./models/{model_name}/enhance_unit_effects.png"
+losses = visualize_unit_effect(model, grid, env, params, [100, 200], filename)
 
 
 # # Prune by channel

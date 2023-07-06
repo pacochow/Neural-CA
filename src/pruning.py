@@ -114,14 +114,24 @@ def prune_by_channel(model: nn.Module, channel: int, enhance: bool = False) -> n
 
   return model_copy
 
-def prune_by_unit(model: nn.Module, grid, env, params):
+def prune_by_unit(model: nn.Module, grid, env, params, prune_units = None):
   
   units = np.arange(model.hidden_units)
-  losses = np.zeros(model.hidden_units)
-  import matplotlib.pyplot as plt
+  
+  
+  
+  if prune_units == None:
+    prune_range = units
+  
+  else:
+    prune_range = np.arange(prune_units[0], prune_units[1])
+  
+  losses = np.zeros(len(prune_range))
+  phenotype = np.zeros((len(prune_range), grid.grid_size, grid.grid_size, 4))
+    
   with torch.no_grad():
-    for i in tqdm(range(model.hidden_units)):
-      params.knockout_unit = units[i]
+    for i in tqdm(range(len(prune_range))):
+      params.knockout_unit = units[prune_range[i]]
       
       # Run model
       state_history, _, _ = grid.run(model, env, params)
@@ -130,4 +140,6 @@ def prune_by_unit(model: nn.Module, grid, env, params):
       target = rotate_image(model.target, params.env_angle+45)
       losses[i] = ((state_history[-1, :, :, :4]-target[0].numpy())**2).mean()
       
-  return losses
+      phenotype[i] = state_history[-1, :, :, :4]
+  
+  return phenotype, losses

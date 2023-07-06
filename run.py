@@ -4,14 +4,21 @@ from src.env_ca import *
 from src.grid import Grid
 from helpers.visualizer import *
 from src.params import ObjectView
+import pickle
+
+# Load model
+model_name = "angled_env_directional_16_2_529"
+model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
+
+grid_coordinates = [(x, y) for x in range(50) for y in range(50)]
 
 params = {
        
 # Run params
-'model_channels': 16, 
-'env_channels': 2,
+'model_channels': model.model_channels, 
+'env_channels': model.env_channels,
 'grid_size': 50,
-'iterations': 100,                  # Number of iterations in animation
+'iterations': 400,                  # Number of iterations in animation
 'angle': 0.0,                       # Perceiving angle
 'env_angle': 45,                    # Environment angle
 'dynamic_env': False,               # Run with moving environment
@@ -20,19 +27,18 @@ params = {
 'destroy': False,                   # Whether pattern is disrupted mid animation
 'destroy_type': 0,                  # Type of pattern disruption
 'seed': None,                       # Coordinates of seed
-'vis_env': False,                   # Visualize environment in animation
+'vis_env': True,                   # Visualize environment in animation
 'vis_hidden': True,                 # Visualize hidden unit activity throughout run
-'hidden_loc': [(25, 25), (30, 20)], # Location of where to visualize hidden unit activity
-'knockout': True,                   # Whether hidden unit is fixed
-'knockout_unit': 6,                # Hidden unit to fix
+'hidden_loc': grid_coordinates, # Location of where to visualize hidden unit activity
+'knockout': False,                   # Whether hidden unit is fixed
+'knockout_unit': np.arange(400),                # Hidden unit to fix
 'nSeconds': 10}                     # Length of animation}
 
 params = ObjectView(params)
 
-# Load model
-model_name = "experimental"
-model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
+
 model.params = params
+model.knockout = params.knockout
 model.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # Initialise grid
@@ -50,10 +56,9 @@ env = grid.add_env(env, "directional proportional", 0, angle = params.env_angle,
 
 
 # Run model
-state_history, env_history, hidden_history = grid.run(model, env, params)
-# for i in range(529):
-#     plt.plot(hidden_history[0, :, i])
-hidden_history = hidden_history.reshape(len(params.hidden_loc), params.iterations, 23, 23)
+# state_history, env_history, hidden_history = grid.run(model, env, params)
+
+# hidden_history = hidden_history.reshape(len(params.hidden_loc), params.iterations, 23, 23)
 
 
 # # Create animation
@@ -61,11 +66,11 @@ hidden_history = hidden_history.reshape(len(params.hidden_loc), params.iteration
 # create_animation(state_history, env_history, filename, params)
 
 # Visualize hidden units
-filename = f'./models/{model_name}/knockout_hidden_units.mp4'
-visualize_hidden_units(state_history, hidden_history, filename, params)
+# filename = f'./models/{model_name}/hidden_units.mp4'
+# visualize_hidden_units(state_history, hidden_history, filename, params)
 
-target = rotate_image(model.target, params.env_angle+45)
-loss = ((state_history[-1, :, :, :4]-target[0].numpy())**2).mean()
+# target = rotate_image(model.target, params.env_angle+45)
+# loss = ((state_history[-1, :, :, :4]-target[0].numpy())**2).mean()
 
 # Visualize all channels
 # filename = f'./models/{model_name}/all_channels_run.mp4'
@@ -85,3 +90,12 @@ loss = ((state_history[-1, :, :, :4]-target[0].numpy())**2).mean()
 # plot_parameter_sizes(model_name, filename)
 
 
+
+# Save all hidden units 
+# grid_dict = {coordinate: None for coordinate in grid_coordinates}
+# for i in range(len(grid_coordinates)):
+#     grid_dict[grid_coordinates[i]] = hidden_history[i]
+
+# filename = f'./models/{model_name}/hidden_unit_history.pkl'
+# with open(filename, 'wb') as fp:
+#     pickle.dump(grid_dict, fp)

@@ -501,8 +501,8 @@ def plot_parameter_sizes(model_name: str, filename: str):
     plt.savefig(filename)
     plt.show()
 
-def visualize_unit_effect(model: nn.Module, grid, env, params, filename: str):
-    loss = prune_by_unit(model, grid, env, params)
+def visualize_unit_effect_loss(model: nn.Module, grid, env, params, filename: str):
+    _, loss = prune_by_unit(model, grid, env, params)
     units = np.arange(model.hidden_units)
     plt.scatter(units, np.log10(loss))
     plt.xlabel("Unit")
@@ -511,3 +511,19 @@ def visualize_unit_effect(model: nn.Module, grid, env, params, filename: str):
     plt.show()
     
     return loss
+
+def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, filename: str):
+    phenotypes, _ = prune_by_unit(model, grid, env, params, prune_units = prune_units)
+    phenotypes = phenotypes.clip(0, 1)
+    
+    # Create a 5x5 grid of subplots
+    fig, axs = plt.subplots(10, 10, figsize=(40, 40))
+
+    for i, ax in enumerate(axs.flatten()):
+
+        ax.imshow(phenotypes[i])
+        ax.axis('off')  # Hide axis
+
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.show()

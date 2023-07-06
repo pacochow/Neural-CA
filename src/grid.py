@@ -48,6 +48,12 @@ class Grid:
         
         for t in range(params.iterations):
             
+            # if t < params.iterations/2:
+            #     model.knockout = True
+            # else:
+            #     model.knockout = False
+                
+            
             if env is not None: 
                 if params.modulate == True:
                     new_env = env*modulate_vals
