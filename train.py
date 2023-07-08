@@ -31,7 +31,7 @@ params = {
 'regenerate': True,                     # Train with regenerative properites
 'dynamic_env': False,                   # Train with dynamic environment
 'env_output': False,                    # Train with model output to environment
-'modulate': False,                      # Train with channel modulating environment visibility
+'modulate': True,                      # Train with channel modulating environment visibility
 'angle_target': True,                   # Train with rotation-invariance
 'knockout': False,                       # Whether hidden unit is fixed
 'knockout_unit': 6,                     # Hidden unit to fix

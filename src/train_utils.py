@@ -120,7 +120,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                         new_env = grid.get_env(t, repeated_env, type = 'phase')
 
                 x, new_env = model.update(x, new_env)
-                modulate_vals = state_to_image(x)[..., 4].unsqueeze(1)
+                modulate_vals = state_to_image(x)[..., 3].unsqueeze(1)
                 
         else:
             for _ in range(iterations):      
