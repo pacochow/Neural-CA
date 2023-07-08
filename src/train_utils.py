@@ -37,9 +37,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
     
     # Initialise progress bar
     pbar = tqdm(total = params.n_epochs+1)
-    
-    if env is not None:
-        repeated_env = env.repeat(params.batch_size, 1, 1, 1)
+        
     
     # Initialize history of pool losses to 0
     pool_losses = torch.zeros(params.pool_size).to(device)
@@ -94,13 +92,14 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                                                     center = (grid_size/2, grid_size/2))
                     # repeated_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
                 
-                new_env = copy.deepcopy(repeated_env)
+                
             
             else:
                 target_imgs = model.target.unsqueeze(0).repeat(params.batch_size, 1, 1, 1).to(device)
-                new_env = copy.deepcopy(repeated_env)
-            
+                repeated_env = env.repeat(params.batch_size, 1, 1, 1)
 
+            
+            new_env = copy.deepcopy(repeated_env)
             
             for t in range(iterations):
                 
