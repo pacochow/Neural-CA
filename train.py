@@ -51,7 +51,7 @@ model_name = "experimental"
 # Initialise model and grid
 torch.manual_seed(0)
 np.random.seed(0)
-model = Alt_CA(target_img, params)
+model = Env_CA(target_img, params)
 
 grid = Grid(params)
 
