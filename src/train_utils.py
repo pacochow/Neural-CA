@@ -73,7 +73,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
         # Run model
         x = x0
         
-        modulate_vals = torch.zeros(params.batch_size, 1, grid_size, grid_size)
+        modulate_vals = torch.zeros(params.batch_size, 1, grid_size, grid_size, device = device)
         
         if env is not None:
             
