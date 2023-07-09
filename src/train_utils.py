@@ -37,9 +37,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
     
     # Initialise progress bar
     pbar = tqdm(total = params.n_epochs+1)
-    
-    if env is not None:
-        repeated_env = env.repeat(params.batch_size, 1, 1, 1)
+        
     
     # Initialize history of pool losses to 0
     pool_losses = torch.zeros(params.pool_size).to(device)
@@ -73,7 +71,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
         # Run model
         x = x0
         
-        modulate_vals = torch.zeros(params.batch_size, 1, grid_size, grid_size, device = params.device)
+        modulate_vals = torch.zeros(params.batch_size, 1, grid_size, grid_size, device = device)
         
         if env is not None:
             
@@ -86,21 +84,22 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                 # Rotate images
                 target_imgs = rotate_image(model.target, angles).to(device)
                 
-                angled_env = torch.zeros(params.batch_size, model.env_channels, grid_size, grid_size).to(device)
+                repeated_env = torch.zeros(params.batch_size, model.env_channels, grid_size, grid_size).to(device)
                 
                 # Angle each environment in the batch based on initialised angles
                 for i in range(params.batch_size):
-                    angled_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
+                    repeated_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
                                                     center = (grid_size/2, grid_size/2))
-                    # angled_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
+                    # repeated_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
                 
-                new_env = copy.deepcopy(angled_env)
+                
             
             else:
                 target_imgs = model.target.unsqueeze(0).repeat(params.batch_size, 1, 1, 1).to(device)
-                new_env = copy.deepcopy(repeated_env)
-            
+                repeated_env = env.repeat(params.batch_size, 1, 1, 1)
 
+            
+            new_env = copy.deepcopy(repeated_env)
             
             for t in range(iterations):
                 
@@ -111,13 +110,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                 # Get new environment
                 if params.dynamic_env == True:
                     
-                    # If we have angled targets, get new environment from angled target environments
-                    if params.angle_target == True:
-                        new_env = grid.get_env(t, angled_env, type = 'phase')
-                    
-                    # If we have normal targets, get new environment from given environment
-                    else:
-                        new_env = grid.get_env(t, repeated_env, type = 'phase')
+                    new_env = grid.get_env(t, repeated_env, type = 'phase')
 
                 x, new_env = model.update(x, new_env)
                 modulate_vals = state_to_image(x)[..., 3].unsqueeze(1)
