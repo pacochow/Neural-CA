@@ -68,9 +68,10 @@ def to_rgb(x):
   return 1.0-a+rgb
 
 def pad_image(x: np.ndarray, grid_size: int):
-  img_size = x.shape[0]
-  pad = (grid_size-img_size)//2
-  padded = np.pad(x, ((pad, pad), (pad, pad), (0, 0)))
+  img_size = (x.shape[0], x.shape[1])
+  pad1 = (grid_size-img_size[0])//2
+  pad2 = (grid_size-img_size[1])//2
+  padded = np.pad(x, ((pad1, pad1), (pad2, pad2), (0, 0)))
   return padded
 
 def state_to_image(state: torch.Tensor) -> torch.Tensor:

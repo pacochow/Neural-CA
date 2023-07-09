@@ -11,7 +11,7 @@ params = {
     
 #   Model params
     
-'grid_size': 50,
+'grid_size': 520,
 'model_channels': 16, 
 'env_channels': 2,       
 'hidden_units': 300,                    # Number of units in hidden layer
@@ -40,7 +40,7 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/gecko.npy")
+img = np.load("./media/hd_gecko.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
@@ -60,7 +60,7 @@ else:
     env = grid.init_env(params.env_channels)
     # env = grid.add_env(env, "linear", channel = 0, angle = 45)
     # env = grid.add_env(env, "circle", channel = 0, center = (grid_size/2, grid_size/2))
-    env = grid.add_env(env, "directional", channel = 0, angle = -45)
+    env = grid.add_env(env, "directional proportional", channel = 0, angle = -45)
 
 # Train model
 model_losses = train(model, model_name, grid, env, params)
