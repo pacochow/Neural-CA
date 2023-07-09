@@ -103,9 +103,8 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
             
             for t in range(iterations):
                 
-                # If environment is to be modulated by a channel, modulate the given repeated environment
-                if params.modulate == True:
-                    new_env = modulate_vals*repeated_env
+                # Modulate the environment so that environment is only visible where there are cells
+                new_env = modulate_vals*repeated_env
                 
                 # Get new environment
                 if params.dynamic_env == True:
@@ -113,6 +112,8 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                     new_env = grid.get_env(t, repeated_env, type = 'phase')
 
                 x, new_env = model.update(x, new_env)
+                
+                # Modulate with transparency channel
                 modulate_vals = state_to_image(x)[..., 3].unsqueeze(1)
                 
         else:

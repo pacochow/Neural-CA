@@ -1,5 +1,4 @@
 from src.env_ca import *
-from src.alt_ca import *
 from src.train_utils import train
 from src.grid import *
 from src.params import ObjectView
@@ -15,7 +14,7 @@ params = {
 'grid_size': 50,
 'model_channels': 16, 
 'env_channels': 2,       
-'hidden_units': 529,                    # Number of units in hidden layer
+'hidden_units': 400,                    # Number of units in hidden layer
 'fire_rate': 0.5,
         
 # Training params
@@ -31,7 +30,6 @@ params = {
 'regenerate': True,                     # Train with regenerative properites
 'dynamic_env': False,                   # Train with dynamic environment
 'env_output': False,                    # Train with model output to environment
-'modulate': True,                      # Train with channel modulating environment visibility
 'angle_target': True,                   # Train with rotation-invariance
 'knockout': False,                       # Whether hidden unit is fixed
 'knockout_unit': 6,                     # Hidden unit to fix

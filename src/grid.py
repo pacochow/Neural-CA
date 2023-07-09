@@ -43,8 +43,7 @@ class Grid:
         
         modulate_vals = state_grid[:, 4]
         
-        if params.vis_hidden == True:
-            hidden_history = np.zeros((len(params.hidden_loc), params.iterations, model.hidden_units))
+        hidden_history = np.zeros((len(params.hidden_loc), params.iterations, model.hidden_units))
         
         for t in range(params.iterations):
             
@@ -55,8 +54,7 @@ class Grid:
                 
             
             if env is not None: 
-                if params.modulate == True:
-                    new_env = env*modulate_vals
+                new_env = env*modulate_vals
                 if params.dynamic_env == True:
                     new_env = self.get_env(t, env, params.dynamic_env_type)
                 env_history[t, :, :, :] = new_env[0, :].numpy()
@@ -71,7 +69,8 @@ class Grid:
                 # Update step
                 state_grid, new_env = model.update(state_grid, new_env, angle = params.angle)
 
-                modulate_vals = state_to_image(state_grid)[..., 4]
+                # Modulate with transparency channel
+                modulate_vals = state_to_image(state_grid)[..., 3]
                 
                 if params.vis_hidden == True:
                     for i in range(len(params.hidden_loc)):

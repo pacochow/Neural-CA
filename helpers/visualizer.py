@@ -6,6 +6,8 @@ from IPython.display import clear_output
 from helpers.helpers import *
 from src.pruning import *
 from tqdm import tqdm
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 
 
 def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params):
@@ -106,6 +108,61 @@ def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filena
         frames = params.iterations,
         interval = 1000 / fps, # in ms
         )
+
+    anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
+
+    print(' Full run done!')
+    
+def visualize_single_hidden_unit(hidden_unit_history: dict, units: list, filename: str):
+
+    iterations = 150
+    unit_activity = np.zeros((len(units), iterations, 50, 50))
+    for unit in range(len(units)):
+        for i in range(50):
+            for j in range(50):
+                unit_activity[unit, :, i, j] = hidden_unit_history[(i, j)][:iterations, units[unit]]
+
+
+    fps = iterations/10
+
+    ncols = len(units) if len(units)<15 else 15
+    nrows = len(units)//ncols+1 if len(units)%ncols!=0 else len(units)//ncols
+    
+
+    # First set up the figure, the axis, and the plot elements we want to animate
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  # 4 subplots for 4 animations
+
+
+    # Create an array to hold your image objects
+    ims = []
+
+    for j in range(nrows*ncols):  # loop over your new dimension
+        if j < len(units):
+            a = unit_activity[j, 0]
+            im = axs[j//ncols, j%ncols].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax = 0.1)
+            
+            axs[j//ncols, j%ncols].set_title(units[j], fontsize = 40)
+            ims.append(im)
+        axs[j//ncols, j%ncols].axis('off')
+    
+    plt.tight_layout()
+
+    def animate_func(i):
+        if i % fps == 0:
+            print('.', end ='')
+        
+        for j in range(len(units)):  # loop over your new dimension
+            ims[j].set_array(unit_activity[j, i])
+            
+
+        return ims
+
+    anim = animation.FuncAnimation(
+                                fig, 
+                                animate_func, 
+                                frames = iterations,
+                                interval = 1000 / fps, # in ms
+                                )
 
     anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
 
@@ -527,3 +584,40 @@ def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, file
     plt.tight_layout()
     plt.savefig(filename)
     plt.show()
+    
+    
+def cluster_hidden_units(model: nn.Module, filename: str = None):
+    
+    """
+    Perform PCA on weights of each hidden unit and cluster 
+    """
+
+    params = [i for i in model.parameters()]
+    X = params[0].squeeze(-2, -1).detach().numpy()
+
+
+    # assume X is your data
+
+    # Apply PCA for dimensionality reduction (optional)
+    pca = PCA(n_components=30)  # or another number less than 54
+    X_pca = pca.fit_transform(X)
+
+    # Create a kmeans model
+    kmeans = KMeans(n_clusters=2); # you can change the number of clusters
+    kmeans.fit(X_pca)
+
+    # Get the cluster assignments for each data point
+    clusters = kmeans.predict(X_pca)
+
+
+    plt.figure(figsize=(10, 7))
+    plt.scatter(X_pca[:, 0], X_pca[:, 1], c=clusters, cmap='viridis')
+
+    plt.xlabel('First Principal Component')
+    plt.ylabel('Second Principal Component')
+    plt.title('Visualization of clustered data', fontweight='bold')
+    plt.colorbar()
+    if filename is not None:
+        plt.savefig(filename)
+    plt.show()
+
