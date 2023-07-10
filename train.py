@@ -12,7 +12,7 @@ params = {
     
 #   Model params
     
-'grid_size': 100,
+'grid_size': 500,
 'model_channels': 16, 
 'env_channels': 2,       
 'hidden_units': 400,                    # Number of units in hidden layer
@@ -21,8 +21,8 @@ params = {
 # Training params
 
 'num_steps': [64, 97],                  # Range of iterations during training
-'pool_size': 128,       
-'batch_size': 4,
+'pool_size': 1024,       
+'batch_size': 8,
 'lr': 2e-3,
 'milestones': [3000, 5000, 7000],       # Milestones for learning rate scheduler
 'gamma': 0.3,                           # Gamma factor for learning rate scheduler
