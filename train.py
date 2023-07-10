@@ -21,7 +21,7 @@ params = {
 # Training params
 
 'num_steps': [64, 97],                  # Range of iterations during training
-'pool_size': 256,       
+'pool_size': 128,       
 'batch_size': 6,
 'lr': 2e-3,
 'milestones': [3000, 5000, 7000],       # Milestones for learning rate scheduler
