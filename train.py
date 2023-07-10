@@ -11,7 +11,7 @@ params = {
     
 #   Model params
     
-'grid_size': 50,
+'grid_size': 520,
 'model_channels': 16, 
 'env_channels': 2,       
 'hidden_units': 400,                    # Number of units in hidden layer
@@ -40,7 +40,7 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/gecko.npy")
+img = np.load("./media/hd_gecko.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
