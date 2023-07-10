@@ -4,6 +4,7 @@ import copy
 import numpy as np
 from tqdm import tqdm
 from helpers.helpers import rotate_image
+import matplotlib.pyplot as plt
 
 def prune_network(model: nn.Module, threshold: float) -> nn.Module:
   """
