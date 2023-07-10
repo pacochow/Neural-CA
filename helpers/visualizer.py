@@ -6,8 +6,7 @@ from IPython.display import clear_output
 from helpers.helpers import *
 from src.pruning import *
 from tqdm import tqdm
-from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
+
 
 
 def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params):
@@ -77,16 +76,19 @@ def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filena
     axs[0].tick_params(labelsize = 20)
     ims.append(im)
     
+    
     for j in range(hidden_states.shape[0]):
         b = hidden_states[j, 0]
         im2 = axs[j+1].imshow(b, interpolation = 'none', aspect = 'auto', vmin = 0, vmax = 0.5)
         axs[j+1].set_title(titles[j], fontsize = 40)
         axs[j+1].axis('off')
         ims.append(im2)
+        
+    # Create a text field to display the iteration number
+    iter_text = axs[0].text(0.5, 1, '', fontsize=40, ha='center', va='bottom', transform=axs[0].transAxes)  # Adjust the position as needed
     
-    # Create colorbar for right plot
-    # cbar = fig.colorbar(im2, ax=axs[1])
-    # cbar.ax.tick_params(labelsize=14)  # Change label size here
+    
+    
     
     plt.tight_layout()
 
@@ -98,6 +100,10 @@ def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filena
         
         for j in range(hidden_states.shape[0]):
             ims[j+1].set_array(hidden_states[j, i])
+            
+        # Update the iteration number text field
+        iter_text.set_text(f'Iteration: {i}')
+        
             
 
         return ims
@@ -124,8 +130,8 @@ def visualize_single_hidden_unit(hidden_unit_history: dict, units: list, filenam
 
 
     fps = iterations/10
-
-    ncols = len(units) if len(units)<15 else 15
+    max = 5
+    ncols = len(units) if len(units)<max else max
     nrows = len(units)//ncols+1 if len(units)%ncols!=0 else len(units)//ncols
     
 
@@ -375,18 +381,7 @@ def visualize_seed_losses(model_name: str, grid, filename, params, env = None):
     plt.show()
 
 
-def comparing_pruning_losses(model1: str, grid1, env1, model2: str, grid2, env2, filename: str, params):
-    
-    percents, loss1 = compute_pruning_losses(model1, grid1, params.iterations, params.angle, env1)
-    percents, loss2 = compute_pruning_losses(model2, grid2, params.iterations, params.angle, env2)
-    plt.scatter(percents, np.log10(loss1))
-    plt.scatter(percents, np.log10(loss2))
-    plt.xlabel("Pruned percentage (%)", fontsize =12)
-    plt.ylabel("Log loss", fontsize = 12)
-    plt.title("Loss after pruning", fontsize = 18)
-    plt.legend([model1, model2])
-    plt.tight_layout()
-    plt.savefig(filename)
+
     
     
 def visualize_pruning(model_name: str, grid, filename: str, params, env = None):
@@ -524,39 +519,6 @@ def visualize_pruning_by_channel(model: nn.Module, grid, filename: str, params, 
 
     print(' Pruning animation done!')
     
-def plot_parameter_sizes(model_name: str, filename: str):
-
-    model = torch.load(f"./models/{model_name}/final_weights.pt")
-    
-    # Get parameters
-    params = [x.data for x in model.parameters()]
-    
-    # Average over all weights for each channel to give array of length num_channels
-    weights = np.abs(params[2][:, :, 0, 0].mean(dim = 1).numpy())
-
-    # Categories and numbers
-    categories = list(range(1, model.model_channels+1))
-
-    # Bar chart
-    x = np.arange(len(categories))  # Label locations
-
-    fig, ax = plt.subplots()
-    rects = ax.bar(x[:model.model_channels], weights[:model.model_channels], label='Model channels')
-
-    # Special label for the last category
-    if model.env_channels > 0 and model.env_output == True:
-        rects_last = ax.bar(x[-1], weights[-1], label='Environment channel')
-
-    # Add some text for labels, title and custom x-axis tick labels
-    ax.set_ylabel('Parameter size', fontsize = 13)
-    ax.set_xlabel('Channels', fontsize = 13)
-    ax.set_title('Mean size of parameters for each channel', fontsize = 16)
-    ax.set_xticks(x)
-    ax.set_xticklabels(categories, rotation = 0)
-    ax.legend()
-
-    plt.savefig(filename)
-    plt.show()
 
 def visualize_unit_effect_loss(model: nn.Module, grid, env, params, filename: str):
     _, loss = prune_by_unit(model, grid, env, params)
@@ -573,8 +535,11 @@ def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, file
     phenotypes, _ = prune_by_unit(model, grid, env, params, prune_units = prune_units)
     phenotypes = phenotypes.clip(0, 1)
     
-    # Create a 5x5 grid of subplots
-    fig, axs = plt.subplots(10, 10, figsize=(40, 40))
+    ncols = 15
+    nrows = 10
+    
+    # Create a grid of subplots
+    fig, axs = plt.subplots(nrows, ncols, figsize=(8*ncols, 8*nrows))
 
     for i, ax in enumerate(axs.flatten()):
 
@@ -586,38 +551,5 @@ def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, file
     plt.show()
     
     
-def cluster_hidden_units(model: nn.Module, filename: str = None):
-    
-    """
-    Perform PCA on weights of each hidden unit and cluster 
-    """
 
-    params = [i for i in model.parameters()]
-    X = params[0].squeeze(-2, -1).detach().numpy()
-
-
-    # assume X is your data
-
-    # Apply PCA for dimensionality reduction (optional)
-    pca = PCA(n_components=30)  # or another number less than 54
-    X_pca = pca.fit_transform(X)
-
-    # Create a kmeans model
-    kmeans = KMeans(n_clusters=2); # you can change the number of clusters
-    kmeans.fit(X_pca)
-
-    # Get the cluster assignments for each data point
-    clusters = kmeans.predict(X_pca)
-
-
-    plt.figure(figsize=(10, 7))
-    plt.scatter(X_pca[:, 0], X_pca[:, 1], c=clusters, cmap='viridis')
-
-    plt.xlabel('First Principal Component')
-    plt.ylabel('Second Principal Component')
-    plt.title('Visualization of clustered data', fontweight='bold')
-    plt.colorbar()
-    if filename is not None:
-        plt.savefig(filename)
-    plt.show()
 

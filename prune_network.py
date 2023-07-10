@@ -6,18 +6,21 @@ from src.pruning import *
 from src.params import ObjectView
 from helpers.visualizer import *
 
+# Load model
+model_name = "modulated_angled_env_directional_16_2_400"
+model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
+
 params = {
        
 # Run params
-'model_channels': 16, 
-'env_channels': 2,
+'model_channels': model.model_channels, 
+'env_channels': model.env_channels,
 'grid_size': 50,
 'iterations': 400,                  # Number of iterations in animation
 'angle': 0.0,                       # Perceiving angle
 'env_angle': 45,                    # Environment angle
 'dynamic_env': False,               # Run with moving environment
 'dynamic_env_type': 'free move',    # Type of moving environment    
-'modulate': False,                  # Environment modulation
 'destroy': False,                    # Whether pattern is disrupted mid animation
 'destroy_type': 0,                  # Type of pattern disruption
 'seed': None,                       # Coordinates of seed
@@ -32,11 +35,10 @@ params = {
 params = ObjectView(params)
 
 
-# Load model
-model_name = "angled_env_directional_16_2_529"
-model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
+
 
 model.params = params
+model.knockout = params.knockout
 model.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # Initialise grid
@@ -49,12 +51,13 @@ env = grid.init_env(model.env_channels)
 # env = grid.add_env(env, "circle", 0)
 env = grid.add_env(env, "directional", 0, angle = params.env_angle)
 
+# Prune by channel
 # filename = f"./models/{model_name}/visualize_pruning_by_channel.mp4"
 # visualize_pruning_by_channel(model, grid, filename, params, env = env)
 
 # Prune by units
 filename = f"./models/{model_name}/enhance_unit_effects.png"
-losses = visualize_unit_effect(model, grid, env, params, [100, 200], filename)
+visualize_unit_effect(model, grid, env, params, [0, 150], filename)
 
 
 # # Prune by channel

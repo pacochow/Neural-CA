@@ -131,7 +131,7 @@ def prune_by_unit(model: nn.Module, grid, env, params, prune_units = None):
     
   with torch.no_grad():
     for i in tqdm(range(len(prune_range))):
-      params.knockout_unit = units[prune_range[i]]
+      params.knockout_unit = [units[prune_range[i]]]
       
       # Run model
       state_history, _, _ = grid.run(model, env, params)
@@ -141,5 +141,20 @@ def prune_by_unit(model: nn.Module, grid, env, params, prune_units = None):
       losses[i] = ((state_history[-1, :, :, :4]-target[0].numpy())**2).mean()
       
       phenotype[i] = state_history[-1, :, :, :4]
+      
   
   return phenotype, losses
+
+
+def comparing_pruning_losses(model1: str, grid1, env1, model2: str, grid2, env2, filename: str, params):
+    
+    percents, loss1 = compute_pruning_losses(model1, grid1, params.iterations, params.angle, env1)
+    percents, loss2 = compute_pruning_losses(model2, grid2, params.iterations, params.angle, env2)
+    plt.scatter(percents, np.log10(loss1))
+    plt.scatter(percents, np.log10(loss2))
+    plt.xlabel("Pruned percentage (%)", fontsize =12)
+    plt.ylabel("Log loss", fontsize = 12)
+    plt.title("Loss after pruning", fontsize = 18)
+    plt.legend([model1, model2])
+    plt.tight_layout()
+    plt.savefig(filename)
