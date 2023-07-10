@@ -40,8 +40,8 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/hd_gecko.npy")
-target_img = pad_image(img, params.grid_size)
+target_img = np.load("./media/hd_gecko.npy")
+# target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
 
