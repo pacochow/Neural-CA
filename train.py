@@ -11,7 +11,7 @@ params = {
     
 #   Model params
     
-'grid_size': 520,
+'grid_size': 50,
 'model_channels': 16, 
 'env_channels': 2,       
 'hidden_units': 400,                    # Number of units in hidden layer
