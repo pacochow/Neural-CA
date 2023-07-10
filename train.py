@@ -6,7 +6,7 @@ from helpers.helpers import *
 import numpy as np
 import torch
 import os
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1024"
 torch.cuda.empty_cache() 
 
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
