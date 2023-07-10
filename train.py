@@ -21,8 +21,8 @@ params = {
 # Training params
 
 'num_steps': [64, 97],                  # Range of iterations during training
-'pool_size': 1024,       
-'batch_size': 8,
+'pool_size': 512,       
+'batch_size': 6,
 'lr': 2e-3,
 'milestones': [3000, 5000, 7000],       # Milestones for learning rate scheduler
 'gamma': 0.3,                           # Gamma factor for learning rate scheduler
@@ -41,8 +41,8 @@ params = ObjectView(params)
 
 # Get target image
 
-target_img = np.load("./media/hd_gecko.npy")
-# target_img = pad_image(img, params.grid_size)
+img = np.load("./media/hd_gecko.npy")
+target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
 
