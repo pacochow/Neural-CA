@@ -43,7 +43,7 @@ class Env_CA(nn.Module):
         out = self.relu(self.conv1(x))
         if self.knockout == True:
             for i in self.params.knockout_unit:
-                out[0, i] = 0.5
+                out[0, i] = 0
         self.hidden_activity = out
         out = self.conv2(out)
         

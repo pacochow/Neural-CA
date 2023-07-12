@@ -56,8 +56,8 @@ env = grid.add_env(env, "directional", 0, angle = params.env_angle)
 # visualize_pruning_by_channel(model, grid, filename, params, env = env)
 
 # Prune by units
-filename = f"./models/{model_name}/enhance_unit_effects.png"
-visualize_unit_effect(model, grid, env, params, [0, 150], filename)
+filename = f"./models/{model_name}/knockout_unit_effects_3.png"
+visualize_unit_effect(model, grid, env, params, [300, 400], filename)
 
 
 # # Prune by channel

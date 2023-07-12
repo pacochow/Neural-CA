@@ -5,6 +5,7 @@ from src.grid import Grid
 from helpers.visualizer import *
 from src.params import ObjectView
 import pickle
+from src.analysis import *
 
 # Load model
 model_name = "modulated_angled_env_directional_16_2_400"
@@ -12,13 +13,21 @@ model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = tor
 
 grid_coordinates = [(x, y) for x in range(50) for y in range(50)]
 
+# Load hidden unit histories
+filename = f'./models/{model_name}/hidden_unit_history.pkl'
+with open(filename, 'rb') as fp:
+    hidden_unit_history = pickle.load(fp)
+living_cells = np.load(f"./models/{model_name}/living_cells.npy")
+
+development_profiles, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], early = True)
+
 params = {
        
 # Run params
 'model_channels': model.model_channels, 
 'env_channels': model.env_channels,
 'grid_size': 50,
-'iterations': 60,                  # Number of iterations in animation
+'iterations': 200,                  # Number of iterations in animation
 'angle': 0.0,                       # Perceiving angle
 'env_angle': 45,                    # Environment angle
 'dynamic_env': False,               # Run with moving environment
@@ -29,8 +38,8 @@ params = {
 'vis_env': False,                   # Visualize environment in animation
 'vis_hidden': True,                 # Visualize hidden unit activity throughout run
 'hidden_loc': [(25, 25), (30, 20)], # Location of where to visualize hidden unit activity
-'knockout': False,                   # Whether hidden unit is fixed
-'knockout_unit': [42],                # Hidden unit to fix
+'knockout': True,                   # Whether hidden unit is fixed
+'knockout_unit': [177, 194, 153, 314],                # Hidden unit to fix
 'nSeconds': 10}                     # Length of animation}
 
 params = ObjectView(params)
@@ -57,14 +66,13 @@ env = grid.add_env(env, "directional", 0, angle = params.env_angle, center = (pa
 state_history, env_history, hidden_history = grid.run(model, env, params)
 hidden_history = hidden_history.reshape(len(params.hidden_loc), params.iterations, 20, 20)
 
-
 # # Create animation
 # filename = f'./models/{model_name}/run.mp4'
 # create_animation(state_history, env_history, filename, params)
 
 
 # Visualize hidden units
-filename = f'./models/{model_name}/hidden_units.mp4'
+filename = f'./models/{model_name}/knockout_hidden_units.mp4'
 visualize_hidden_units(state_history, hidden_history, filename, params)
 
 # target = rotate_image(model.target, params.env_angle+45)
@@ -83,10 +91,6 @@ visualize_hidden_units(state_history, hidden_history, filename, params)
 # filename = f'./models/{model_name}/progress.mp4'
 # create_progress_animation(states, envs, iterations, nSeconds, filename, vis_env = True)
 
-# Visualize parameter sizes
-# filename = f'./models/{model_name}/parameter_sizes.png'
-# plot_parameter_sizes(model_name, filename)
-
 
 
 # Save all hidden units 
@@ -97,3 +101,10 @@ visualize_hidden_units(state_history, hidden_history, filename, params)
 # filename = f'./models/{model_name}/hidden_unit_history.pkl'
 # with open(filename, 'wb') as fp:
 #     pickle.dump(grid_dict, fp)
+
+# # Compute number of living cells at each iteration
+# living_cells = np.zeros((state_history.shape[0], 1))
+# for i in range(state_history.shape[0]):
+#     living_cells[i, 0] = (state_history[i, :, :, 3]>0.1).sum()
+    
+# np.save(f'./models/{model_name}/living_cells.npy', living_cells)

@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
+from helpers.helpers import rotate_image
 
 def plot_parameter_sizes(model_name: str, filename: str):
 
@@ -76,7 +77,7 @@ def cluster_hidden_units(model: nn.Module, filename: str = None):
     
     return clusters, X_pca
 
-def find_hox_units(hidden_unit_history: dict, early: bool = True) -> np.ndarray:
+def find_hox_units(hidden_unit_history: dict, living_cells, early: bool = True) -> np.ndarray:
     
     """
     Takes in dictionary of hidden unit histories as input. Set early = True to find early hox genes.
@@ -89,6 +90,10 @@ def find_hox_units(hidden_unit_history: dict, early: bool = True) -> np.ndarray:
     # Normalise temporal profiles
     temporal_profiles -= temporal_profiles[0]
     development_profiles = np.abs(temporal_profiles[:60])
+        
+    # Compute normalized expression levels
+    normalized_profiles = development_profiles/living_cells
+
 
     if early == True:
         # Find units that have highest cumulative activity before iteration 20
@@ -102,13 +107,13 @@ def find_hox_units(hidden_unit_history: dict, early: bool = True) -> np.ndarray:
         return development_profiles, late_sorted
     
     
-def plot_expression_profiles(development_profiles: np.ndarray, sorted_list: np.ndarray, filename: str):
+def plot_expression_profiles(normalized_profiles: np.ndarray, sorted_list: np.ndarray, filename: str):
     plt.figure(figsize = (10, 8))
 
     # Find hox genes
     for i in sorted_list[:20]:
         
-        plt.plot(development_profiles[:,i]);
+        plt.plot(normalized_profiles[:,i]);
 
     plt.legend(sorted_list[:20], fontsize = 16)
     plt.xlabel("Iterations", fontsize = 18)
@@ -122,3 +127,23 @@ def plot_expression_profiles(development_profiles: np.ndarray, sorted_list: np.n
     plt.show()
     
     
+def progressive_knockout_loss(model: nn.Module, units: np.ndarray, grid, env, params):
+    losses = []
+    
+    for i in range(30):
+        
+        # Knockout units
+        params.knockout_unit = units[:i]
+        
+        # Run model
+        state_history, _, _ = grid.run(model, env, params)
+
+        # Compute loss
+        
+        target = rotate_image(model.target, params.env_angle+45)
+        loss = ((state_history[-1, :, :, :4]-target[0].numpy())**2).mean()
+        losses.append(loss)
+        
+        
+    return losses
+        

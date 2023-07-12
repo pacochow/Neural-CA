@@ -130,7 +130,7 @@ def visualize_single_hidden_unit(hidden_unit_history: dict, units: list, filenam
 
 
     fps = iterations/10
-    max = 5
+    max = 10
     ncols = len(units) if len(units)<max else max
     nrows = len(units)//ncols+1 if len(units)%ncols!=0 else len(units)//ncols
     
@@ -535,7 +535,7 @@ def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, file
     phenotypes, _ = prune_by_unit(model, grid, env, params, prune_units = prune_units)
     phenotypes = phenotypes.clip(0, 1)
     
-    ncols = 15
+    ncols = 10
     nrows = 10
     
     # Create a grid of subplots
