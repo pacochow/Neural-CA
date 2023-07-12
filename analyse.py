@@ -12,7 +12,7 @@ np.random.seed(0)
 torch.manual_seed(0)
 
 # Load model
-model_name = "modulated_angled_env_directional_16_2_400"
+model_name = "retrained"
 model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
 
 # Load hidden unit histories
@@ -20,6 +20,16 @@ filename = f'./models/{model_name}/hidden_unit_history.pkl'
 with open(filename, 'rb') as fp:
     hidden_unit_history = pickle.load(fp)
 living_cells = np.load(f"./models/{model_name}/living_cells.npy")
+
+# Load model
+og_model_name = "modulated_angled_env_directional_16_2_400"
+og_model = torch.load(f"./models/{og_model_name}/final_weights.pt", map_location = torch.device('cpu'))
+
+# Load hidden unit histories
+og_filename = f'./models/{og_model_name}/hidden_unit_history.pkl'
+with open(og_filename, 'rb') as fp:
+    og_hidden_unit_history = pickle.load(fp)
+og_living_cells = np.load(f"./models/{og_model_name}/living_cells.npy")
 
 
 params = {
@@ -61,24 +71,31 @@ env = grid.add_env(env, "directional", 0, angle = params.env_angle, center = (pa
 
 
 normalized_profiles, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], early = True)
+og_normalized_profiles, og_early_sorted = find_hox_units(og_hidden_unit_history, og_living_cells[:60], early = True)
 
-filename = f'./models/{model_name}/early_hox.png'
-plot_expression_profiles(normalized_profiles, early_sorted, filename)
+# filename = f'./models/{model_name}/early_hox.png'
+# plot_expression_profiles(normalized_profiles, early_sorted, filename)
 
-
-
-early_loss = progressive_knockout_loss(model, early_sorted, grid, env, params)
-late_loss = progressive_knockout_loss(model, early_sorted[::-1], grid, env, params)
-
-plt.plot(np.log10(early_loss))
-plt.plot(np.log10(late_loss))
-plt.xlabel("Number of units knocked out")
-plt.ylabel("Log loss")
-
-plt.tight_layout()
-plt.legend(["Early units", "Late units"])
-filename = f'./models/{model_name}/early_vs_late.png'
+conserved =[]
+for i in range(len(early_sorted)):
+    conserved.append(len(set(early_sorted[:i]) & set(og_early_sorted[:i])))
+plt.plot(conserved)
+plt.xlabel("Top n hox genes")
+plt.ylabel("Number of conserved hox genes after retraining")
+filename = f"./models/{model_name}/conserved_hox.png"
 plt.savefig(filename)
+# early_loss = progressive_knockout_loss(model, early_sorted, grid, env, params)
+# late_loss = progressive_knockout_loss(model, early_sorted[::-1], grid, env, params)
+
+# plt.plot(np.log10(early_loss))
+# plt.plot(np.log10(late_loss))
+# plt.xlabel("Number of units knocked out")
+# plt.ylabel("Log loss")
+
+# plt.tight_layout()
+# plt.legend(["Early units", "Late units"])
+# filename = f'./models/{model_name}/early_vs_late.png'
+# plt.savefig(filename)
 
 
 # save = f'./models/{model_name}/hox.mp4'

@@ -47,13 +47,14 @@ target_img = pad_image(img, params.grid_size)
 model_name = "experimental"
 
 
-old_model_name = "modulated_angled_env_directional_16_2_400"
-model = torch.load(f"./models/{old_model_name}/final_weights.pt", map_location = device)
-model.target = torch.tensor(target_img)
+# old_model_name = "modulated_angled_env_directional_16_2_400"
+# model = torch.load(f"./models/{old_model_name}/final_weights.pt", map_location = device)
+# model.target = torch.tensor(target_img)
 
 # Initialise model and grid
 torch.manual_seed(0)
 np.random.seed(0)
+model = Env_CA(target_img, params)
 
 grid = Grid(params)
 
