@@ -63,22 +63,22 @@ env = grid.add_env(env, "directional", 0, angle = params.env_angle, center = (pa
 normalized_profiles, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], early = True)
 
 filename = f'./models/{model_name}/early_hox.png'
-plot_expression_profiles(normalized_profiles, [177, 194, 153, 314], filename)
+plot_expression_profiles(normalized_profiles, early_sorted, filename)
 
 
 
-# early_loss = progressive_knockout_loss(model, early_sorted, grid, env, params)
-# late_loss = progressive_knockout_loss(model, early_sorted[::-1], grid, env, params)
+early_loss = progressive_knockout_loss(model, early_sorted, grid, env, params)
+late_loss = progressive_knockout_loss(model, early_sorted[::-1], grid, env, params)
 
-# plt.plot(np.log10(early_loss))
-# plt.plot(np.log10(late_loss))
-# plt.xlabel("Number of units knocked out")
-# plt.ylabel("Log loss")
+plt.plot(np.log10(early_loss))
+plt.plot(np.log10(late_loss))
+plt.xlabel("Number of units knocked out")
+plt.ylabel("Log loss")
 
-# plt.tight_layout()
-# plt.legend(["Early units", "Late units"])
-# filename = f'./models/{model_name}/early_vs_late.png'
-# plt.savefig(filename)
+plt.tight_layout()
+plt.legend(["Early units", "Late units"])
+filename = f'./models/{model_name}/early_vs_late.png'
+plt.savefig(filename)
 
 
 # save = f'./models/{model_name}/hox.mp4'

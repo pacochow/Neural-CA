@@ -39,7 +39,7 @@ params = {
 'vis_hidden': True,                 # Visualize hidden unit activity throughout run
 'hidden_loc': [(25, 25), (30, 20)], # Location of where to visualize hidden unit activity
 'knockout': True,                   # Whether hidden unit is fixed
-'knockout_unit': [177, 194, 153, 314],                # Hidden unit to fix
+'knockout_unit': early_sorted[:20],                # Hidden unit to fix
 'nSeconds': 10}                     # Length of animation}
 
 params = ObjectView(params)
