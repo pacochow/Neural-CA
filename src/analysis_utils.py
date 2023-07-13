@@ -47,8 +47,10 @@ def cluster_hidden_units(model: nn.Module, filename: str = None):
     """
 
     params = [i for i in model.parameters()]
-    X = params[0].squeeze(-2, -1).detach().numpy()
-
+    input_weights = params[0].squeeze(-2, -1).detach().numpy()
+    bias = params[1].unsqueeze(1).detach().numpy()
+    output_weights = params[2].squeeze(-2, -1).reshape(model.hidden_units, model.model_channels).detach().numpy()
+    X = np.concatenate([input_weights, bias, output_weights], axis = 1)
 
     # assume X is your data
 
@@ -86,7 +88,7 @@ def find_hox_units(hidden_unit_history: dict, living_cells, early: bool = True) 
 
     # Get temporal profiles across all pixels
     temporal_profiles = sum(list(hidden_unit_history.values()))
-
+    
     # Normalise temporal profiles
     temporal_profiles -= temporal_profiles[0]
     development_profiles = np.abs(temporal_profiles[:60])
@@ -97,14 +99,14 @@ def find_hox_units(hidden_unit_history: dict, living_cells, early: bool = True) 
 
     if early == True:
         # Find units that have highest cumulative activity before iteration 20
-        early_exp = development_profiles[:20].sum(axis=0)
+        early_exp = normalized_profiles[:20].sum(axis=0)
         early_sorted = early_exp.argsort()[::-1]
-        return development_profiles, early_sorted
+        return normalized_profiles, early_sorted
     else:
         
-        late_exp = development_profiles[20:].sum(axis=0)
+        late_exp = normalized_profiles[20:].sum(axis=0)
         late_sorted = late_exp.argsort()[::-1]
-        return development_profiles, late_sorted
+        return normalized_profiles, late_sorted
     
     
 def plot_expression_profiles(normalized_profiles: np.ndarray, sorted_list: np.ndarray, filename: str):
@@ -147,3 +149,30 @@ def progressive_knockout_loss(model: nn.Module, units: np.ndarray, grid, env, pa
         
     return losses
         
+        
+def quantify_retrain_improvement(naive_loss, retrain_loss, difference = False):
+    
+    diff = []
+    benchmarks = np.arange(-3.9, -1, 0.001)
+    naive_indices = []
+    retrain_indices= []
+    for j in benchmarks:
+        
+        retrain_index = next(i for i, x in enumerate(np.log10(retrain_loss)) if x<j)
+        naive_index = next(i for i, x in enumerate(np.log10(naive_loss)) if x<j)
+        diff.append(naive_index-retrain_index)
+        naive_indices.append(naive_index)
+        retrain_indices.append(retrain_index)
+        
+    if diff == False:
+        plt.plot(benchmarks, naive_indices)
+        plt.plot(benchmarks, retrain_indices)
+        
+        plt.ylabel("Iterations needed to reach benchmark")
+        plt.legend(["Naive", "Retrain"])
+    else:
+        plt.plot(benchmarks, diff)
+        plt.ylabel("Difference in iterations required to reach benchmark")
+
+    plt.xlabel("Log loss benchmark")
+    plt.show()
