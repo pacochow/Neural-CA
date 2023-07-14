@@ -11,7 +11,7 @@ class Env_CA(nn.Module):
     def __init__(self, target: np.ndarray, params):
         super(Env_CA, self).__init__()
         
-        self.target = torch.tensor(target)
+        self.target = torch.tensor(target, dtype = torch.float16)
         self.model_channels = params.model_channels
         self.env_channels = params.env_channels
         self.hidden_units = params.hidden_units
@@ -58,13 +58,13 @@ class Env_CA(nn.Module):
         """    
         
         # Identity filter
-        identify = torch.tensor(np.outer([0, 1, 0], [0, 1, 0]))
+        identify = torch.tensor(np.outer([0, 1, 0], [0, 1, 0]), dtype = torch.float16)
         
         # Sobel filters
-        dx = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0)  # Sobel filter
+        dx = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0, dtype = torch.float16)  # Sobel filter
         dy = dx.T
         
-        angle = torch.tensor(angle)
+        angle = torch.tensor(angle, dtype = torch.float16)
         c, s = torch.cos(angle), torch.sin(angle)
         
         # Stack filters together

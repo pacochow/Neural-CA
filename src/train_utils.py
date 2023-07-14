@@ -40,7 +40,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
         
     
     # Initialize history of pool losses to 0
-    pool_losses = torch.zeros(params.pool_size).to(device)
+    pool_losses = torch.zeros(params.pool_size, dtype = np.float16).to(device)
     
     for epoch in range(params.n_epochs+1):
         
@@ -71,7 +71,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
         # Run model
         x = x0
         
-        modulate_vals = torch.zeros(params.batch_size, 1, grid_size, grid_size, device = device)
+        modulate_vals = torch.zeros(params.batch_size, 1, grid_size, grid_size, device = device, dtype = torch.float16)
         
         if env is not None:
             
@@ -84,7 +84,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                 # Rotate images
                 target_imgs = rotate_image(model.target.cpu(), angles).to(device)
                 
-                repeated_env = torch.zeros(params.batch_size, model.env_channels, grid_size, grid_size).to(device)
+                repeated_env = torch.zeros(params.batch_size, model.env_channels, grid_size, grid_size, dtype = np.float16).to(device)
                 
                 # Angle each environment in the batch based on initialised angles
                 for i in range(params.batch_size):

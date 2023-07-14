@@ -22,7 +22,7 @@ class Grid:
         self.grid_size = grid_size
         
         # Initialise seed to zeros everywhere
-        seed = torch.zeros(1, self.model_channels, grid_size, grid_size)
+        seed = torch.zeros(1, self.model_channels, grid_size, grid_size, dtype = torch.float16)
         
         if center == None:
             # Set seed in the center to be equal to 1 for all channels except RGB
@@ -37,13 +37,13 @@ class Grid:
         Run model and save state history
         """
         state_grid = self.init_seed(self.grid_size, params.seed)
-        state_history = np.zeros((params.iterations, self.grid_size, self.grid_size, model.model_channels))
-        env_history = np.zeros((params.iterations, model.env_channels, self.grid_size, self.grid_size))
+        state_history = np.zeros((params.iterations, self.grid_size, self.grid_size, model.model_channels), dtype = np.float16)
+        env_history = np.zeros((params.iterations, model.env_channels, self.grid_size, self.grid_size), dtype = np.float16)
         new_env = copy.deepcopy(env)
         
         modulate_vals = state_grid[:, 4]
         
-        hidden_history = np.zeros((len(params.hidden_loc), params.iterations, model.hidden_units))
+        hidden_history = np.zeros((len(params.hidden_loc), params.iterations, model.hidden_units), dtype = np.float16)
         
         for t in range(params.iterations):
             
@@ -92,7 +92,7 @@ class Grid:
         :return: 1, env_channels, grid_size, grid_size
         """
         
-        env = torch.zeros(1, env_channels, self.grid_size, self.grid_size)
+        env = torch.zeros(1, env_channels, self.grid_size, self.grid_size, dtype = torch.float16)
         return env
         
     def add_env(self, env: torch.Tensor, type = 'linear', channel: int = 0, angle: float = -45.0, center: tuple = (25, 25), circle_radius: float = 20.0) -> torch.Tensor:
