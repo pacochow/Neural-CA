@@ -100,12 +100,12 @@ def rotate_image(image: torch.Tensor, degrees) -> torch.Tensor:
   img = image.unsqueeze(0).repeat(len(degrees), 1, 1, 1).permute(0, 3, 1, 2)
   
   # convert degrees to radians
-  theta = torch.zeros(len(degrees), 2, 3, dtype = torch.float16)
+  theta = torch.zeros(len(degrees), 2, 3)
   for i in range(len(degrees)):
       theta[i] = torch.tensor([
           [math.cos(math.radians(degrees[i])), math.sin(math.radians(degrees[i])), 0],
           [-math.sin(math.radians(degrees[i])), math.cos(math.radians(degrees[i])), 0]
-      ], dtype = torch.float16)
+      ])
 
   # create an affine grid
   grid = F.affine_grid(theta, img.size(), align_corners = False)
