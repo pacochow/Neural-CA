@@ -40,7 +40,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
         
     
     # Initialize history of pool losses to 0
-    pool_losses = torch.zeros(params.pool_size, dtype = np.float16).to(device)
+    pool_losses = torch.zeros(params.pool_size, dtype = torch.float16).to(device)
     
     for epoch in range(params.n_epochs+1):
         
