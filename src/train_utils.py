@@ -40,7 +40,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
         
     
     # Initialize history of pool losses to 0
-    pool_losses = torch.zeros(params.pool_size, dtype = torch.float16).to(device)
+    pool_losses = torch.zeros(params.pool_size).to(device)
     
     for epoch in range(params.n_epochs+1):
         
@@ -64,7 +64,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
             if params.regenerate == True:
                 
                 # Disrupt pattern for samples with lowest 3 loss
-                for i in range(1,3):
+                for i in range(1,4):
                     mask = create_circular_mask(grid_size).to(device)
                     x0[-i]*=mask
             
