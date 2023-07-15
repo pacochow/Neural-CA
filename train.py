@@ -13,7 +13,7 @@ params = {
     
 #   Model params
     
-'grid_size': 500,
+'grid_size': 50,
 'model_channels': 16, 
 'env_channels': 2,       
 'hidden_units': 400,                    # Number of units in hidden layer
@@ -22,8 +22,8 @@ params = {
 # Training params
 
 'num_steps': [64, 97],                  # Range of iterations during training
-'pool_size': 64,       
-'batch_size': 3,
+'pool_size': 1024,       
+'batch_size': 8,
 'lr': 2e-3,
 'milestones': [3000, 5000, 7000],       # Milestones for learning rate scheduler
 'gamma': 0.3,                           # Gamma factor for learning rate scheduler
@@ -42,7 +42,7 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/hd_gecko.npy")
+img = np.load("./media/gecko.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
