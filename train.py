@@ -6,6 +6,7 @@ from helpers.helpers import *
 import numpy as np
 import torch
 
+torch.cuda.empty_cache()
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 params = {
