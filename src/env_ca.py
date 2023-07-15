@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 class Env_CA(nn.Module):
     """
@@ -133,7 +134,7 @@ class Env_CA(nn.Module):
             perception_grid = self.perceive(state_grid, angle)
         
         # Apply update rule to all cells
-        ds_grid = self.forward(perception_grid)
+        ds_grid = checkpoint(perception_grid)
 
         # Stochastic update mask
         if self.env_output == True:
