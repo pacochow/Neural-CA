@@ -64,7 +64,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
             if params.regenerate == True:
                 
                 # Disrupt pattern for samples with lowest 3 loss
-                for i in range(1,4):
+                for i in range(1,3):
                     mask = create_circular_mask(grid_size).to(device)
                     x0[-i]*=mask
             
