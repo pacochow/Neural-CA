@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 params = {
     
 #   Model params
@@ -21,7 +21,7 @@ params = {
 # Training params
 
 'num_steps': [64, 97],                  # Range of iterations during training
-'pool_size': 32,       
+'pool_size': 64,       
 'batch_size': 4,
 'lr': 2e-3,
 'milestones': [3000, 5000, 7000],       # Milestones for learning rate scheduler
