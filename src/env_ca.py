@@ -64,7 +64,7 @@ class Env_CA(nn.Module):
         dx = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0, dtype = torch.float16)  # Sobel filter
         dy = dx.T
         
-        angle = torch.tensor(angle, dtype = torch.float16)
+        angle = torch.tensor(angle)
         c, s = torch.cos(angle), torch.sin(angle)
         
         # Stack filters together
