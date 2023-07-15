@@ -97,7 +97,7 @@ def rotate_image(image: torch.Tensor, degrees) -> torch.Tensor:
     degrees = [degrees]
   
   # img should have shape (batch_size, 4, grid_size, grid_size)
-  img = image.unsqueeze(0).repeat(len(degrees), 1, 1, 1).permute(0, 3, 1, 2)
+  img = image.float().unsqueeze(0).repeat(len(degrees), 1, 1, 1).permute(0, 3, 1, 2)
   
   # convert degrees to radians
   theta = torch.zeros(len(degrees), 2, 3)

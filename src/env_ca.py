@@ -11,7 +11,7 @@ class Env_CA(nn.Module):
     def __init__(self, target: np.ndarray, params):
         super(Env_CA, self).__init__()
         
-        self.target = torch.tensor(target)
+        self.target = torch.tensor(target, dtype = torch.float16)
         self.model_channels = params.model_channels
         self.env_channels = params.env_channels
         self.hidden_units = params.hidden_units
