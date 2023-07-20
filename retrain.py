@@ -50,6 +50,7 @@ model_name = "experimental"
 old_model_name = "modulated_angled_env_directional_16_2_400"
 model = torch.load(f"./models/{old_model_name}/final_weights.pt", map_location = device)
 model.target = torch.tensor(target_img)
+model.device = device
 
 
 grid = Grid(params)
