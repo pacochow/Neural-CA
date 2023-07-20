@@ -5,6 +5,7 @@ import torch
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from helpers.helpers import rotate_image
+from matplotlib_venn import venn3, venn3_circles
 
 def plot_parameter_sizes(model_name: str, filename: str):
 
@@ -79,7 +80,7 @@ def cluster_hidden_units(model: nn.Module, filename: str = None):
     
     return clusters, X_pca
 
-def find_hox_units(hidden_unit_history: dict, living_cells, early: bool = True) -> np.ndarray:
+def find_hox_units(hidden_unit_history: dict, living_cells, phase: tuple) -> np.ndarray:
     
     """
     Takes in dictionary of hidden unit histories as input. Set early = True to find early hox genes.
@@ -97,16 +98,11 @@ def find_hox_units(hidden_unit_history: dict, living_cells, early: bool = True) 
     normalized_profiles = development_profiles/living_cells
 
 
-    if early == True:
-        # Find units that have highest cumulative activity before iteration 20
-        early_exp = normalized_profiles[:20].sum(axis=0)
-        early_sorted = early_exp.argsort()[::-1]
-        return normalized_profiles, early_sorted
-    else:
         
-        late_exp = normalized_profiles[20:].sum(axis=0)
-        late_sorted = late_exp.argsort()[::-1]
-        return normalized_profiles, late_sorted
+    # Find units that have highest cumulative activity between iterations set by phase argument 
+    exp = development_profiles[phase[0]:phase[1]].sum(axis=0)
+    sorted = exp.argsort()[::-1]
+    return development_profiles, sorted
     
     
 def plot_expression_profiles(normalized_profiles: np.ndarray, sorted_list: np.ndarray, filename: str):
@@ -152,6 +148,10 @@ def progressive_knockout_loss(model: nn.Module, units: np.ndarray, grid, env, pa
         
 def quantify_retrain_improvement(naive_loss, retrain_loss, difference = False):
     
+    """"
+    Quantify how much retraining improved training compared to naive training 
+    """
+    
     diff = []
     benchmarks = np.arange(-3.9, -1, 0.001)
     naive_indices = []
@@ -175,4 +175,24 @@ def quantify_retrain_improvement(naive_loss, retrain_loss, difference = False):
         plt.ylabel("Difference in iterations required to reach benchmark")
 
     plt.xlabel("Log loss benchmark")
+    plt.show()
+    
+    
+
+def compare_developmental_stages(early, mid, late):
+    set1 = set(early[:20])
+    set2 = set(mid[:20])
+    set3 = set(late[:20])
+
+    plt.figure(figsize=(10, 10))  
+    v=venn3([set1, set2, set3], ["Early", "Mid", "Late"])
+    # Customizing the labels
+    v.get_label_by_id('100').set_text('\n'.join(map(str, set1 - set2 - set3)))
+    v.get_label_by_id('010').set_text('\n'.join(map(str, set2 - set1 - set3)))
+    v.get_label_by_id('001').set_text('\n'.join(map(str, set3 - set1 - set2)))
+    v.get_label_by_id('110').set_text('\n'.join(map(str, (set1 & set2) - set3)))
+    v.get_label_by_id('101').set_text('\n'.join(map(str, (set1 & set3) - set2)))
+    v.get_label_by_id('011').set_text('\n'.join(map(str, (set2 & set3) - set1)))
+    v.get_label_by_id('111').set_text('\n'.join(map(str, set1 & set2 & set3)))
+
     plt.show()

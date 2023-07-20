@@ -8,6 +8,7 @@ from src.params import ObjectView
 from src.grid import Grid
 from helpers.helpers import rotate_image
 
+
 np.random.seed(0)
 torch.manual_seed(0)
 
@@ -34,6 +35,13 @@ with open(og_filename, 'rb') as fp:
 og_living_cells = np.load(f"./models/{og_model_name}/living_cells.npy")
 
 
+# Load model
+model_name2 = "naive_ladybug"
+model2 = torch.load(f"./models/{model_name2}/final_weights.pt", map_location = torch.device('cpu'))
+filename2 = f'./models/{model_name2}/hidden_unit_history.pkl'
+with open(filename2, 'rb') as fp:
+    hidden_unit_history2 = pickle.load(fp)
+living_cells2 = np.load(f"./models/{model_name2}/living_cells.npy")
 
 params = {
        
@@ -50,9 +58,9 @@ params = {
 'destroy_type': 0,                  # Type of pattern disruption
 'seed': None,                       # Coordinates of seed
 'vis_env': False,                   # Visualize environment in animation
-'vis_hidden': True,                 # Visualize hidden unit activity throughout run
+'vis_hidden': False,                 # Visualize hidden unit activity throughout run
 'hidden_loc': [(25, 25), (30, 20)], # Location of where to visualize hidden unit activity
-'knockout': True,                   # Whether hidden unit is fixed
+'knockout': False,                   # Whether hidden unit is fixed
 'knockout_unit': [42],                # Hidden unit to fix
 'nSeconds': 10}                     # Length of animation}
 
@@ -63,6 +71,13 @@ model.params = params
 model.knockout = params.knockout
 model.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
+model2.params = params
+model2.knockout = params.knockout
+model2.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+og_model.params = params
+og_model.knockout = params.knockout
+og_model.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # Initialise grid
 grid = Grid(params)
@@ -72,45 +87,91 @@ env = grid.init_env(model.env_channels)
 env = grid.add_env(env, "directional", 0, angle = params.env_angle, center = (params.grid_size/2, params.grid_size/2))
 
 
-# hidden_unit_history_array = np.zeros((params.grid_size**2, hidden_unit_history[(0, 0)].shape[0], model.hidden_units))
-# og_hidden_unit_history_array = np.zeros((params.grid_size**2, hidden_unit_history[(0, 0)].shape[0], model.hidden_units))
+# Run model
+# state_history, _, _ = grid.run(model, env, params)
+og_state_history, _, _ = grid.run(og_model, env, params)
+# state_history2, _, _ = grid.run(model2, env, params)
 
-# for i, j in enumerate(hidden_unit_history.keys()):
-#     hidden_unit_history_array[i] = hidden_unit_history[j]
-#     og_hidden_unit_history_array[i] = og_hidden_unit_history[j]
-    
-# hidden_unit_history_array = hidden_unit_history_array[:, :60]
-# development_profiles = np.abs(hidden_unit_history_array-np.expand_dims(hidden_unit_history_array[:, 0], axis = 1))
-# normalized_profiles = development_profiles/living_cells[:60].reshape(1, 60, 1)
-
-# og_hidden_unit_history_array = og_hidden_unit_history_array[:, :60]
-# og_development_profiles = np.abs(og_hidden_unit_history_array-np.expand_dims(og_hidden_unit_history_array[:, 0], axis = 1))
-# og_normalized_profiles = og_development_profiles/og_living_cells[:60].reshape(1, 60, 1)
-
-# diff = (normalized_profiles-og_normalized_profiles)**2
-# plt.plot(diff.sum(axis = (0, 2)))
+# state_history = state_history[:60]
+og_state_history = og_state_history[:60]
+# state_history2 = state_history2[:60]
 
 
 
+# Comparing channel differences  
+# # Create a grid of subplots
+# fig, axs = plt.subplots(3, 4, figsize=(25, 15))
+
+# for j in range(12):
+#     i = j+4
+#     # Plot the data on subplot i, j
+#     diff = (state_history[..., i:i+1] - og_state_history[..., i:i+1])**2
+#     diff2 = (state_history2[..., i:i+1] - og_state_history[..., i:i+1])**2
+#     axs[j//4, j%4].plot(diff.sum(axis = (1, 2, 3)))
+#     axs[j//4, j%4].plot(diff2.sum(axis = (1, 2, 3)))
+#     axs[j//4, j%4].set_title(f'Channel {i+1}', fontsize = 17)
+#     axs[j//4, j%4].legend(["Retrained", "Naive"], fontsize = 15)
+#     axs[j//4, j%4].set_xlabel("Iterations", fontsize  = 15)
+#     axs[j//4, j%4].set_ylabel("Squared difference with gecko", fontsize = 15)
+
+# plt.legend(["1-4"]+[i+1 for i in range(4, 16)])
+# plt.tight_layout()
+# plt.show()
+
+
+
+_, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], phase = (0, 20))
+_, mid_sorted = find_hox_units(hidden_unit_history, living_cells[:60], phase = (21, 40))
+_, late_sorted = find_hox_units(hidden_unit_history, living_cells[:60], phase = (41, 60))
+
+_, early_sorted2 = find_hox_units(hidden_unit_history2, living_cells2[:60], phase = (0, 20))
+_, mid_sorted2 = find_hox_units(hidden_unit_history2, living_cells2[:60], phase = (21, 40))
+_, late_sorted2 = find_hox_units(hidden_unit_history2, living_cells2[:60], phase = (41, 60))
+
+_, og_early_sorted = find_hox_units(og_hidden_unit_history, og_living_cells[:60], phase = (0, 20))
+_, og_mid_sorted = find_hox_units(og_hidden_unit_history, og_living_cells[:60], phase = (21, 34))
+_, og_late_sorted = find_hox_units(og_hidden_unit_history, og_living_cells[:60], phase = (35, 60))
+
+# Compare developmental stages
+# compare_developmental_stages(og_early_sorted, og_mid_sorted, og_late_sorted)
+
+# Quantify how much retraining improved training compared to naive training 
 # quantify_retrain_improvement(losses, retrained_losses, difference = True)
 
-normalized_profiles, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], early = True)
-og_normalized_profiles, og_early_sorted = find_hox_units(og_hidden_unit_history, og_living_cells[:60], early = True)
-
-diff = (normalized_profiles-og_normalized_profiles)**2
-plt.plot(diff.sum(axis = 1))
-
+# Plot expression profiles
 # filename = f'./models/{model_name}/early_hox.png'
 # plot_expression_profiles(normalized_profiles, early_sorted, filename)
 
-# conserved =[]
-# for i in range(len(early_sorted)):
-#     conserved.append(len(set(early_sorted[:i]) & set(og_early_sorted[:i])))
-# plt.plot(conserved)
-# plt.xlabel("Top n hox genes")
-# plt.ylabel("Number of conserved hox genes after retraining")
+# Plot conserved genes
+conserved_early = []
+conserved_mid = []
+conserved_late = []
+
+conserved_early2 = []
+conserved_mid2 = []
+conserved_late2 = []
+for i in range(len(early_sorted)):
+    conserved_early.append(len(set(early_sorted[:i]) & set(og_early_sorted[:i])))
+    conserved_mid.append(len(set(mid_sorted[:i]) & set(og_mid_sorted[:i])))
+    conserved_late.append(len(set(late_sorted[:i]) & set(og_late_sorted[:i])))
+    
+    conserved_early2.append(len(set(early_sorted2[:i]) & set(og_early_sorted[:i])))
+    conserved_mid2.append(len(set(mid_sorted2[:i]) & set(og_mid_sorted[:i])))
+    conserved_late2.append(len(set(late_sorted2[:i]) & set(og_late_sorted[:i])))
+plt.plot(conserved_early, color = 'tab:blue')
+plt.plot(conserved_mid, color = 'tab:orange')
+plt.plot(conserved_late, color = 'tab:green')
+plt.plot(conserved_early2, color = 'tab:blue', linestyle = 'dashed')
+plt.plot(conserved_mid2, color = 'tab:orange', linestyle = 'dashed')
+plt.plot(conserved_late2, color = 'tab:green', linestyle = 'dashed')
+plt.xlabel("Top n hox genes")
+plt.ylabel("Number of conserved hox genes after retraining")
+plt.legend(["Retrained – Early", "Retrained – Mid", "Retrained – Late", 
+            "Naive – Early", "Naive – Mid", "Naive – Late"])
+plt.show()
 # filename = f"./models/{model_name}/conserved_hox.png"
 # plt.savefig(filename)
+
 # early_loss = progressive_knockout_loss(model, early_sorted, grid, env, params)
 # late_loss = progressive_knockout_loss(model, early_sorted[::-1], grid, env, params)
 

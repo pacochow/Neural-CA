@@ -45,85 +45,84 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
     for epoch in range(params.n_epochs+1):
         
         optimizer.zero_grad()
-        
-        with torch.cuda.amp.autocast():
-        
-            # Sample from pool
-            
-            # Select indices from pool
-            indices = np.random.randint(params.pool_size, size = params.batch_size)
-            x0 = pool[indices]
-            
-            # Sort indices of losses with highest loss first
-            loss_rank = pool_losses[indices].argsort(descending = True)
-            x0 = x0[loss_rank]
-            
-            # Reseed highest loss sample
-            x0[0] = seed
-            
-            if params.regenerate == True:
-                
-                # Disrupt pattern for samples with lowest 3 loss
-                for i in range(1,4):
-                    mask = create_circular_mask(grid_size).to(device)
-                    x0[-i]*=mask
-            
-            # Train with sample   
-            iterations = np.random.randint(params.num_steps[0], params.num_steps[1])
-            # Run model
-            x = x0
-            
-            modulate_vals = torch.zeros(params.batch_size, 1, grid_size, grid_size, device = device, dtype = torch.float16)
-            
-            if env is not None:
-                
-                
-                if params.angle_target == True:
-                    
-                    # Randomly initialize angles
-                    angles = list(np.random.uniform(0, 360, params.batch_size))
-                    
-                    # Rotate images
-                    target_imgs = rotate_image(model.target.cpu(), angles).to(device)
-                    
-                    repeated_env = torch.zeros(params.batch_size, model.env_channels, grid_size, grid_size, dtype = torch.float16).to(device)
-                    
-                    # Angle each environment in the batch based on initialised angles
-                    for i in range(params.batch_size):
-                        repeated_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
-                                                        center = (grid_size/2, grid_size/2))
-                        # repeated_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
-                    
-                    
-                
-                else:
-                    target_imgs = model.target.unsqueeze(0).repeat(params.batch_size, 1, 1, 1).to(device)
-                    repeated_env = env.repeat(params.batch_size, 1, 1, 1)
 
+        
+        # Sample from pool
+        
+        # Select indices from pool
+        indices = np.random.randint(params.pool_size, size = params.batch_size)
+        x0 = pool[indices]
+        
+        # Sort indices of losses with highest loss first
+        loss_rank = pool_losses[indices].argsort(descending = True)
+        x0 = x0[loss_rank]
+        
+        # Reseed highest loss sample
+        x0[0] = seed
+        
+        if params.regenerate == True:
+            
+            # Disrupt pattern for samples with lowest 3 loss
+            for i in range(1,4):
+                mask = create_circular_mask(grid_size).to(device)
+                x0[-i]*=mask
+        
+        # Train with sample   
+        iterations = np.random.randint(params.num_steps[0], params.num_steps[1])
+        # Run model
+        x = x0
+        
+        modulate_vals = torch.zeros(params.batch_size, 1, grid_size, grid_size, device = device)
+        
+        if env is not None:
+            
+            
+            if params.angle_target == True:
                 
-                new_env = copy.deepcopy(repeated_env)
+                # Randomly initialize angles
+                angles = list(np.random.uniform(0, 360, params.batch_size))
                 
-                for t in range(iterations):
-                    
-                    # Modulate the environment so that environment is only visible where there are cells
-                    new_env = modulate_vals*repeated_env
-                    
-                    # Get new environment
-                    if params.dynamic_env == True:
-                        
-                        new_env = grid.get_env(t, repeated_env, type = 'phase')
-
-                    x, new_env = model.update(x, new_env)
-                    
-                    # Modulate with transparency channel
-                    modulate_vals = state_to_image(x)[..., 3].unsqueeze(1)
-                    
+                # Rotate images
+                target_imgs = rotate_image(model.target.cpu(), angles).to(device)
+                
+                repeated_env = torch.zeros(params.batch_size, model.env_channels, grid_size, grid_size).to(device)
+                
+                # Angle each environment in the batch based on initialised angles
+                for i in range(params.batch_size):
+                    repeated_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
+                                                    center = (grid_size/2, grid_size/2))
+                    # repeated_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
+                
+                
+            
             else:
-                for _ in range(iterations):      
-                    x, _ = model.update(x)
+                target_imgs = model.target.unsqueeze(0).repeat(params.batch_size, 1, 1, 1).to(device)
+                repeated_env = env.repeat(params.batch_size, 1, 1, 1)
 
-            # Pixel-wise L2 loss
-            transformed_img = state_to_image(x)[..., :4]
+            
+            new_env = copy.deepcopy(repeated_env)
+            
+            for t in range(iterations):
+                
+                # Modulate the environment so that environment is only visible where there are cells
+                new_env = modulate_vals*repeated_env
+                
+                # Get new environment
+                if params.dynamic_env == True:
+                    
+                    new_env = grid.get_env(t, repeated_env, type = 'phase')
+
+                x, new_env = model.update(x, new_env)
+                
+                # Modulate with transparency channel
+                modulate_vals = state_to_image(x)[..., 3].unsqueeze(1)
+                
+        else:
+            for _ in range(iterations):      
+                x, _ = model.update(x)
+
+        # Pixel-wise L2 loss
+        transformed_img = state_to_image(x)[..., :4]
         
         pool_loss = ((transformed_img - target_imgs)**2).mean(dim = [1, 2, 3])
         loss = pool_loss.mean()

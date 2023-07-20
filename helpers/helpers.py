@@ -78,9 +78,9 @@ def state_to_image(state: torch.Tensor) -> torch.Tensor:
   """ 
   Convert state to image
 
-  :param state: nx16x28x28
+  :param state: n, n_channels, grid_size, grid_size
   :type state: Torch tensor
-  :return: n, 28, 28, n_channels
+  :return: n, grid_size, grid_size, n_channels
   :rtype: Array
   """
   return state.permute(0, 2, 3, 1)
@@ -97,7 +97,7 @@ def rotate_image(image: torch.Tensor, degrees) -> torch.Tensor:
     degrees = [degrees]
   
   # img should have shape (batch_size, 4, grid_size, grid_size)
-  img = image.float().unsqueeze(0).repeat(len(degrees), 1, 1, 1).permute(0, 3, 1, 2)
+  img = image.unsqueeze(0).repeat(len(degrees), 1, 1, 1).permute(0, 3, 1, 2)
   
   # convert degrees to radians
   theta = torch.zeros(len(degrees), 2, 3)

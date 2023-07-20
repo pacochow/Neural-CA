@@ -54,6 +54,8 @@ def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params
     
 def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filename: str, params):
 
+    hidden_states = hidden_states.reshape(len(params.hidden_loc), params.iterations, 20, 20)
+    
     fps = params.iterations/params.nSeconds
 
     nrows = 1
@@ -182,19 +184,21 @@ def load_progress_states(model_name: str, grid, params, env = None):
     
     # Initialise states
     states = np.zeros((4, params.iterations, params.grid_size, params.grid_size, 4))
-    envs = np.zeros((4, params.iterations, params.grid_size, params.grid_size))
+
     
     # Loop over all saved epochs and run model
     saved_epochs = [100, 500, 1000, 4000]
     for i in range(len(saved_epochs)):
-        model = torch.load(f"./models/{model_name}/{saved_epochs[i]}.pt")
-        full_states, envs[i], _ = grid.run(model, env, params)
+        model = torch.load(f"./models/{model_name}/{saved_epochs[i]}.pt", map_location = torch.device('cpu'))
+        model.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+        full_states, _, _ = grid.run(model, env, params)
         states[i] = full_states[...,:4]
         
-    return states, envs
+    return states
 
-def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: int, nSeconds: int, filename: str, vis_env: bool = False):
-    fps = iterations/nSeconds
+def create_progress_animation(states: np.ndarray, filename: str, params):
+    fps = params.iterations/params.nSeconds
 
     # First set up the figure, the axis, and the plot elements we want to animate
     fig, axs = plt.subplots(nrows=1, ncols=4, figsize=(32,8))  # 4 subplots for 4 animations
@@ -207,19 +211,15 @@ def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: 
     
     # Create an array to hold your image objects
     ims = []
-    ims2 = []
     
     cm = create_colormap()
     for j in range(4):  # loop over your new dimension
         a = states[j, 0]  # the initial state for each animation
-        b = envs[j, 0]
-        if vis_env == True:
-            im2 = axs[j].imshow(b, cmap = cm, interpolation = 'gaussian', aspect = 'auto', vmin = 0, vmax = 1)
+        
         im = axs[j].imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
         axs[j].axis('off')
         axs[j].set_title(titles[j], fontsize = 40)
         ims.append(im)
-        ims2.append(im2)
     
     plt.tight_layout()
 
@@ -228,7 +228,6 @@ def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: 
             print('.', end ='')
         
         for j in range(4):  # loop over your new dimension
-            ims2[j].set_array(envs[j, i])
             ims[j].set_array(states[j, i])  # update each animation
             
 
@@ -237,7 +236,7 @@ def create_progress_animation(states: np.ndarray, envs: np.ndarray, iterations: 
     anim = animation.FuncAnimation(
         fig, 
         animate_func, 
-        frames = iterations,
+        frames = params.iterations,
         interval = 1000 / fps, # in ms
         )
 

@@ -5,21 +5,21 @@ from src.grid import Grid
 from helpers.visualizer import *
 from src.params import ObjectView
 import pickle
-from src.analysis import *
+from src.analysis_utils import *
 
 # Load model
-model_name = "modulated_angled_env_directional_16_2_400"
+model_name = "naive_ladybug"
 model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
 
 grid_coordinates = [(x, y) for x in range(50) for y in range(50)]
 
 # Load hidden unit histories
-filename = f'./models/{model_name}/hidden_unit_history.pkl'
-with open(filename, 'rb') as fp:
-    hidden_unit_history = pickle.load(fp)
-living_cells = np.load(f"./models/{model_name}/living_cells.npy")
+# filename = f'./models/{model_name}/hidden_unit_history.pkl'
+# with open(filename, 'rb') as fp:
+#     hidden_unit_history = pickle.load(fp)
+# living_cells = np.load(f"./models/{model_name}/living_cells.npy")
 
-development_profiles, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], early = True)
+# development_profiles, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], early = True)
 
 params = {
        
@@ -37,9 +37,9 @@ params = {
 'seed': None,                       # Coordinates of seed
 'vis_env': False,                   # Visualize environment in animation
 'vis_hidden': True,                 # Visualize hidden unit activity throughout run
-'hidden_loc': [(25, 25), (30, 20)], # Location of where to visualize hidden unit activity
-'knockout': True,                   # Whether hidden unit is fixed
-'knockout_unit': early_sorted[:20],                # Hidden unit to fix
+'hidden_loc': grid_coordinates, # Location of where to visualize hidden unit activity
+'knockout': False,                   # Whether hidden unit is fixed
+'knockout_unit': [42],                # Hidden unit to fix
 'nSeconds': 10}                     # Length of animation}
 
 params = ObjectView(params)
@@ -64,7 +64,7 @@ env = grid.add_env(env, "directional", 0, angle = params.env_angle, center = (pa
 
 # Run model
 state_history, env_history, hidden_history = grid.run(model, env, params)
-hidden_history = hidden_history.reshape(len(params.hidden_loc), params.iterations, 20, 20)
+
 
 # # Create animation
 # filename = f'./models/{model_name}/run.mp4'
@@ -72,8 +72,8 @@ hidden_history = hidden_history.reshape(len(params.hidden_loc), params.iteration
 
 
 # Visualize hidden units
-filename = f'./models/{model_name}/knockout_hidden_units.mp4'
-visualize_hidden_units(state_history, hidden_history, filename, params)
+# filename = f'./models/{model_name}/hidden_units.mp4'
+# visualize_hidden_units(state_history, hidden_history, filename, params)
 
 # target = rotate_image(model.target, params.env_angle+45)
 # loss = ((state_history[-1, :, :, :4]-target[0].numpy())**2).mean()
@@ -87,24 +87,24 @@ visualize_hidden_units(state_history, hidden_history, filename, params)
 # visualize_seed_losses(model_name, grid, filename, params = params, env = env)
 
 # Create progress animation
-# states, envs = load_progress_states(model_name, grid, iterations, grid_size, angle, env)
+# states = load_progress_states(model_name, grid, params, env)
 # filename = f'./models/{model_name}/progress.mp4'
-# create_progress_animation(states, envs, iterations, nSeconds, filename, vis_env = True)
+# create_progress_animation(states, filename, params)
 
 
 
 # Save all hidden units 
-# grid_dict = {coordinate: None for coordinate in grid_coordinates}
-# for i in range(len(grid_coordinates)):
-#     grid_dict[grid_coordinates[i]] = hidden_history[i]
+grid_dict = {coordinate: None for coordinate in grid_coordinates}
+for i in range(len(grid_coordinates)):
+    grid_dict[grid_coordinates[i]] = hidden_history[i]
 
-# filename = f'./models/{model_name}/hidden_unit_history.pkl'
-# with open(filename, 'wb') as fp:
-#     pickle.dump(grid_dict, fp)
+filename = f'./models/{model_name}/hidden_unit_history.pkl'
+with open(filename, 'wb') as fp:
+    pickle.dump(grid_dict, fp)
 
-# # Compute number of living cells at each iteration
-# living_cells = np.zeros((state_history.shape[0], 1))
-# for i in range(state_history.shape[0]):
-#     living_cells[i, 0] = (state_history[i, :, :, 3]>0.1).sum()
+# Compute number of living cells at each iteration
+living_cells = np.zeros((state_history.shape[0], 1))
+for i in range(state_history.shape[0]):
+    living_cells[i, 0] = (state_history[i, :, :, 3]>0.1).sum()
     
-# np.save(f'./models/{model_name}/living_cells.npy', living_cells)
+np.save(f'./models/{model_name}/living_cells.npy', living_cells)
