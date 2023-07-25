@@ -21,7 +21,7 @@ class Env_CA(nn.Module):
         self.fire_rate = params.fire_rate
     
         self.num_channels = self.model_channels + self.env_channels
-        self.input_dim = self.num_channels*2
+        self.input_dim = self.num_channels*3
         
         # Update network
         self.conv1 = nn.Conv2d(self.input_dim, self.hidden_units, 1)
@@ -60,34 +60,34 @@ class Env_CA(nn.Module):
         # Identity filter
         identify = torch.tensor(np.outer([0, 1, 0], [0, 1, 0]))
         
-        laplace = torch.tensor(([1, 2, 1], [2, -12, 2], [1, 2, 1]))/8
-        kernel_stack = torch.stack([identify,  laplace], 0)
-        kernel = kernel_stack.unsqueeze(1)
-        kernel = kernel.float().repeat(self.num_channels, 1, 1, 1).to(self.device)
-        state_repeated = state_grid.repeat_interleave(kernel_stack.shape[0], dim = 1)
-        perception_grid = F.conv2d(state_repeated, kernel, padding = 1, groups = kernel.size(0))
-        return perception_grid
-        
-        # # Sobel filters
-        # dx = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0)  # Sobel filter
-        # dy = dx.T
-        
-        # angle = torch.tensor(angle)
-        # c, s = torch.cos(angle), torch.sin(angle)
-        
-        # # Stack filters together
-        # kernel_stack = torch.stack([identify, c*dx-s*dy, s*dx+c*dy], 0)
+        # laplace = torch.tensor(([1, 2, 1], [2, -12, 2], [1, 2, 1]))/8
+        # kernel_stack = torch.stack([identify,  laplace], 0)
         # kernel = kernel_stack.unsqueeze(1)
-        
-        # # Repeat kernels to form num_channels x 1 x 3 x 3 filter
         # kernel = kernel.float().repeat(self.num_channels, 1, 1, 1).to(self.device)
-
-        # state_repeated = state_grid.repeat_interleave(kernel_stack.shape[0],dim = 1)
-        
-        # # Perform convolution
-        # perception_grid = F.conv2d(state_repeated, kernel, padding=1, groups=kernel.size(0))
-
+        # state_repeated = state_grid.repeat_interleave(kernel_stack.shape[0], dim = 1)
+        # perception_grid = F.conv2d(state_repeated, kernel, padding = 1, groups = kernel.size(0))
         # return perception_grid
+        
+        # Sobel filters
+        dx = torch.tensor(np.outer([1, 2, 1], [-1, 0, 1]) / 8.0)  # Sobel filter
+        dy = dx.T
+        
+        angle = torch.tensor(angle)
+        c, s = torch.cos(angle), torch.sin(angle)
+        
+        # Stack filters together
+        kernel_stack = torch.stack([identify, c*dx-s*dy, s*dx+c*dy], 0)
+        kernel = kernel_stack.unsqueeze(1)
+        
+        # Repeat kernels to form num_channels x 1 x 3 x 3 filter
+        kernel = kernel.float().repeat(self.num_channels, 1, 1, 1).to(self.device)
+
+        state_repeated = state_grid.repeat_interleave(kernel_stack.shape[0],dim = 1)
+        
+        # Perform convolution
+        perception_grid = F.conv2d(state_repeated, kernel, padding=1, groups=kernel.size(0))
+
+        return perception_grid
 
     def stochastic_update(self, grid: torch.Tensor, ds_grid: torch.Tensor) -> torch.Tensor:
         """ 

@@ -110,7 +110,6 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                 if params.dynamic_env == True:
                     
                     new_env = grid.get_env(t, repeated_env, type = 'fade out')
-
                 x, new_env = model.update(x, new_env)
                 
                 # Modulate with transparency channel

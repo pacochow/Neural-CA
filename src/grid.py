@@ -164,6 +164,10 @@ class Grid:
         elif type == 'phase':
             opacity = 0.5+0.5*np.sin(0.2*(t+10*np.pi/4))
             return opacity*env
+        elif type == 'fade out':
+            # Opacity exponentially decreases to 0 after 35 iterations to fade out environment
+            opacity = 1-1/(1+np.exp(-0.7*(t-39)))
+            return opacity*env
         elif type == 'rotating':
 
             angle = t-45
