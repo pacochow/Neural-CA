@@ -29,7 +29,6 @@ params = {
 'gamma': 0.3,                           # Gamma factor for learning rate scheduler
 'decay': 3e-4,                          # Weight decay for adam
 'n_epochs': 8000,
-'regenerate': True,                     # Train with regenerative properites
 'dynamic_env': False,                   # Train with dynamic environment
 'env_output': False,                    # Train with model output to environment
 'angle_target': True,                   # Train with rotation-invariance
@@ -42,7 +41,7 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/snake.npy")
+img = np.load("./media/gecko.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
