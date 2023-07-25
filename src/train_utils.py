@@ -59,13 +59,12 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
         
         # Reseed highest loss sample
         x0[0] = seed
-        
-        if params.regenerate == True:
+    
             
-            # Disrupt pattern for samples with lowest 3 loss
-            for i in range(1,4):
-                mask = create_circular_mask(grid_size).to(device)
-                x0[-i]*=mask
+        # Disrupt pattern for samples with lowest 3 loss
+        for i in range(1,4):
+            mask = create_circular_mask(grid_size).to(device)
+            x0[-i]*=mask
         
         # Train with sample   
         iterations = np.random.randint(params.num_steps[0], params.num_steps[1])
@@ -110,7 +109,7 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                 # Get new environment
                 if params.dynamic_env == True:
                     
-                    new_env = grid.get_env(t, repeated_env, type = 'phase')
+                    new_env = grid.get_env(t, repeated_env, type = 'fade out')
 
                 x, new_env = model.update(x, new_env)
                 
@@ -150,8 +149,8 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
         # Visualise progress
         pbar.set_description("Loss: %.4f" % np.log10(loss.item()))
         pbar.update()
-        # if epoch%1 == 0:
-        #     visualize_training(epoch, model_losses, torch.tensor(x0), x)
+        if epoch%1 == 0:
+            visualize_training(epoch, model_losses, torch.tensor(x0), x)
            
         # Save progress 
         if epoch in [100, 500, 1000, 4000]:
