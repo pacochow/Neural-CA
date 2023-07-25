@@ -149,8 +149,8 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
         # Visualise progress
         pbar.set_description("Loss: %.4f" % np.log10(loss.item()))
         pbar.update()
-        if epoch%1 == 0:
-            visualize_training(epoch, model_losses, torch.tensor(x0), x)
+        # if epoch%1 == 0:
+        #     visualize_training(epoch, model_losses, torch.tensor(x0), x)
            
         # Save progress 
         if epoch in [100, 500, 1000, 4000]:
