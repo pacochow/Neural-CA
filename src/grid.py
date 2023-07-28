@@ -77,7 +77,7 @@ class Grid:
                         hidden_history[i, t] = model.hidden_activity[0, :, params.hidden_loc[i][0], params.hidden_loc[i][1]]
                 
                 # Disrupt pattern
-                if params.destroy == True and t == params.iterations//2:
+                if params.destroy == True and t == params.iterations//4:
                     state_grid = create_block_mask(state_grid, self.grid_size, type = params.destroy_type)
 
         return state_history, env_history, hidden_history

@@ -26,7 +26,7 @@ class Env_CA(nn.Module):
         # Update network
         self.conv1 = nn.Conv2d(self.input_dim, self.hidden_units, 1)
         if self.env_output == False:
-            self.conv2 = nn.Conv2d(self.hidden_units, self.model_channels, 1)
+            self.conv2 = nn.Conv2d(200, self.model_channels, 1)
         else:
             self.conv2 = nn.Conv2d(self.hidden_units, self.num_channels, 1)
         nn.init.xavier_uniform_(self.conv1.weight)
@@ -34,6 +34,10 @@ class Env_CA(nn.Module):
         self.relu = nn.ReLU()
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
+        
+        self.extra = nn.Conv2d(self.hidden_units, 200, 1)
+        nn.init.xavier_uniform_(self.extra.weight)
+        nn.init.zeros_(self.extra.bias)
         
         self.device = params.device
         self.params = params
@@ -45,6 +49,7 @@ class Env_CA(nn.Module):
             for i in self.params.knockout_unit:
                 out[0, i] = 0.5
         self.hidden_activity = out
+        out = self.relu(self.extra(out))
         out = self.conv2(out)
         
         return out
@@ -133,7 +138,7 @@ class Env_CA(nn.Module):
             # Apply update rule to all cells
             for i in range(perception_grid.shape[-1]):
                 for j in range(perception_grid.shape[-1]):
-                    self.knockout = True if 30<i<40 and 10<j<20 else False
+                    self.knockout = True if 30<i<40 and 5<j<20 else False
                     ds_grid[:, :, i, j] = self.forward(perception_grid[:, :, i:i+1, j:j+1])[..., 0, 0]
             
 

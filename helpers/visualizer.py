@@ -30,16 +30,24 @@ def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params
     im = plt.imshow(a, interpolation='none', aspect='auto', vmin=0, vmax=1)
     plt.axis('off')
 
+    # Create text element to display iteration number, centered and with larger font
+    iteration_text = plt.text(0.5, 0.95, '', transform=plt.gcf().transFigure, horizontalalignment='center', fontsize=20)
+
     def animate_func(i):
         if i % fps == 0:
             print( '.', end ='' )
+
         if params.vis_env == True:
             im2.set_array(envs[i, 0])
             if b.shape[0] > 1:
                 im3.set_array(envs[i].sum(axis = 0)/(b.sum(axis = 0).max()))
+        
         im.set_array(states[i])
 
-        return [im]
+        # Update iteration number text
+        iteration_text.set_text(f'Iteration: {i}')
+
+        return [im, iteration_text]
 
     anim = animation.FuncAnimation(
                                 fig, 
@@ -51,6 +59,8 @@ def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params
     anim.save(filename, fps=fps, extra_args=['-vcodec', 'libx264'])
 
     print(' Full run done!')
+
+
     
 def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filename: str, params):
 
