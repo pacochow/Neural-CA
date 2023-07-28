@@ -40,13 +40,13 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/snake_yellow.npy")
+img = np.load("./media/ladybug.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
 
 
-old_model_name = "modulated_angled_env_directional_16_2_400"
+old_model_name = "zero_output"
 model = torch.load(f"./models/{old_model_name}/final_weights.pt", map_location = device)
 model.target = torch.tensor(target_img)
 model.device = device
