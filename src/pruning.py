@@ -135,7 +135,7 @@ def prune_by_unit(model: nn.Module, grid, env, params, prune_units = None):
       params.knockout_unit = [units[prune_range[i]]]
       
       # Run model
-      state_history, _, _ = grid.run(model, env, params)
+      state_history, _, _ = grid.run(model, env, params, manual = True)
 
       # Compute loss
       target = rotate_image(model.target, params.env_angle+45)

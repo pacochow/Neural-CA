@@ -136,7 +136,8 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
 
         # Normalize gradients
         for param in model.parameters():
-            param.grad.data = param.grad.data / (torch.norm(param.grad.data) + 1e-8)
+            if param.requires_grad:
+                param.grad.data = param.grad.data / (torch.norm(param.grad.data) + 1e-8)
    
         
         optimizer.step()
