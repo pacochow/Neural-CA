@@ -46,7 +46,7 @@ target_img = pad_image(img, params.grid_size)
 model_name = "experimental"
 
 
-old_model_name = "zero_output"
+old_model_name = "fade_env"
 model = torch.load(f"./models/{old_model_name}/final_weights.pt", map_location = device)
 model.target = torch.tensor(target_img)
 model.device = device
