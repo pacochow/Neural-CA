@@ -65,12 +65,21 @@ else:
     env = grid.add_env(env, "directional proportional", channel = 0, angle = -45)
 
 # Train model
-model_losses = train(model, model_name, grid, env, params)
+# model_losses = train(model, model_name, grid, env, params)
+
 
 # Calculate number of params
-# non_zero_params = 0
-# zero_params = 0
+# total_params = 0
+# trainable_params = 0
+
 # for param in model.parameters():
-#     non_zero_params+=(param!=0).sum()
-#     zero_params+=(param==0).sum()
-# print(non_zero_params.numpy()+zero_params.numpy())
+#     total_params += torch.prod(torch.tensor(param.shape)).item()  # Count total parameters
+#     if param.requires_grad:
+#         trainable_params += torch.prod(torch.tensor(param.shape)).item()  # Count parameters that requires_grad
+
+# print('Total parameters: ', total_params)
+# print('Trainable parameters: ', trainable_params)
+
+
+
+

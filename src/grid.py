@@ -44,6 +44,7 @@ class Grid:
         modulate_vals = state_grid[:, 4]
         
         hidden_history = np.zeros((len(params.hidden_loc), params.iterations, model.hidden_units))
+        # hidden_history = np.zeros((len(params.hidden_loc), params.iterations, 200))
         
         for t in range(params.iterations):
             
@@ -77,7 +78,7 @@ class Grid:
                         hidden_history[i, t] = model.hidden_activity[0, :, params.hidden_loc[i][0], params.hidden_loc[i][1]]
                 
                 # Disrupt pattern
-                if params.destroy == True and t == params.iterations//4:
+                if params.destroy == True and t == params.iterations//2:
                     state_grid = create_block_mask(state_grid, self.grid_size, type = params.destroy_type)
 
         return state_history, env_history, hidden_history

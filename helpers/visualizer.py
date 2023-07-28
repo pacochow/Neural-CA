@@ -72,7 +72,7 @@ def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filena
     ncols = 1+hidden_states.shape[0]
 
     # First set up the figure, the axis, and the plot elements we want to animate
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  # 2 subplots for 2 animations
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  
     
     # Clip values between 0 and 1
     states = states.clip(0, 1)[...,:4]
@@ -133,7 +133,7 @@ def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filena
     
 def visualize_single_hidden_unit(hidden_unit_history: dict, units: list, filename: str):
 
-    iterations = 150
+    iterations = 100
     unit_activity = np.zeros((len(units), iterations, 50, 50))
     for unit in range(len(units)):
         for i in range(50):
@@ -142,7 +142,7 @@ def visualize_single_hidden_unit(hidden_unit_history: dict, units: list, filenam
 
 
     fps = iterations/10
-    max = 10
+    max = 15
     ncols = len(units) if len(units)<max else max
     nrows = len(units)//ncols+1 if len(units)%ncols!=0 else len(units)//ncols
     
