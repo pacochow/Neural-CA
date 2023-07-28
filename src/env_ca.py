@@ -5,8 +5,8 @@ import torch.nn.functional as F
 
 class Env_CA(nn.Module):
     """
-    Input: n, 48, grid_size, grid_size
-    Output: n, 16, grid_size, grid_size
+    Input: n, n_channels*3, grid_size, grid_size
+    Output: n, n_channels, grid_size, grid_size
     """
     def __init__(self, target: np.ndarray, params):
         super(Env_CA, self).__init__()
@@ -43,7 +43,7 @@ class Env_CA(nn.Module):
         out = self.relu(self.conv1(x))
         if self.knockout == True:
             for i in self.params.knockout_unit:
-                out[0, i] = 0
+                out[0, i] = 0.5
         self.hidden_activity = out
         out = self.conv2(out)
         
@@ -112,7 +112,7 @@ class Env_CA(nn.Module):
 
         return F.max_pool2d(state_grid[:,3:4,:,:], kernel_size = 3, stride = 1, padding = 1) > 0.1
     
-    def update(self, state_grid: torch.Tensor, env = None, angle = 0.0) -> torch.Tensor:
+    def update(self, state_grid: torch.Tensor, env = None, angle = 0.0, manual = False) -> torch.Tensor:
         
         # Pre update life mask
         pre_mask = self.alive_masking(state_grid)
@@ -126,8 +126,16 @@ class Env_CA(nn.Module):
         else: 
             perception_grid = self.perceive(state_grid, angle)
         
-        # Apply update rule to all cells
-        ds_grid = self.forward(perception_grid)
+        if manual == False:
+            ds_grid = self.forward(perception_grid)
+        else:
+            ds_grid = torch.zeros(perception_grid.shape[0], self.model_channels, perception_grid.shape[-1], perception_grid.shape[-1])
+            # Apply update rule to all cells
+            for i in range(perception_grid.shape[-1]):
+                for j in range(perception_grid.shape[-1]):
+                    self.knockout = True if 30<i<40 and 10<j<20 else False
+                    ds_grid[:, :, i, j] = self.forward(perception_grid[:, :, i:i+1, j:j+1])[..., 0, 0]
+            
 
         # Stochastic update mask
         if self.env_output == True:

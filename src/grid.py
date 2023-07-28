@@ -32,7 +32,7 @@ class Grid:
         
         return seed
     
-    def run(self, model, env, params) -> np.ndarray:
+    def run(self, model, env, params, manual = False) -> np.ndarray:
         """ 
         Run model and save state history
         """
@@ -67,7 +67,7 @@ class Grid:
                 state_history[t] = transformed_img.detach().numpy()
                 
                 # Update step
-                state_grid, new_env = model.update(state_grid, new_env, angle = params.angle)
+                state_grid, new_env = model.update(state_grid, new_env, angle = params.angle, manual = manual)
 
                 # Modulate with transparency channel
                 modulate_vals = state_to_image(state_grid)[..., 3]
@@ -79,7 +79,6 @@ class Grid:
                 # Disrupt pattern
                 if params.destroy == True and t == params.iterations//2:
                     state_grid = create_block_mask(state_grid, self.grid_size, type = params.destroy_type)
-        
 
         return state_history, env_history, hidden_history
 
