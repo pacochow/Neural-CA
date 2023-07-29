@@ -34,6 +34,7 @@ class Env_CA(nn.Module):
         self.relu = nn.ReLU()
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
+        self.conv1.bias.requires_grad = False
         
         # self.extra = nn.Conv2d(self.hidden_units, 200, 1)
         # nn.init.xavier_uniform_(self.extra.weight)
