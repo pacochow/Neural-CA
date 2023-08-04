@@ -45,7 +45,7 @@ def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params
         im.set_array(states[i])
 
         # Update iteration number text
-        iteration_text.set_text(f'Iteration: {i}')
+        iteration_text.set_text(f't = {i}')
 
         return [im, iteration_text]
 
@@ -114,7 +114,7 @@ def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filena
             ims[j+1].set_array(hidden_states[j, i])
             
         # Update the iteration number text field
-        iter_text.set_text(f'Iteration: {i}')
+        iter_text.set_text(f't = {i}')
         
             
 
@@ -140,7 +140,7 @@ def visualize_single_hidden_unit(hidden_unit_history: dict, units: list, filenam
             for j in range(50):
                 unit_activity[unit, :, i, j] = hidden_unit_history[(i, j)][:iterations, units[unit]]
 
-
+    
     fps = iterations/10
     max = 15
     ncols = len(units) if len(units)<max else max
@@ -318,7 +318,7 @@ def visualize_all_channels(states: np.ndarray, filename: str, n_channels: int, p
 
 def plot_log_loss(ax, epoch, loss):
     ax.set_title("Loss history", fontsize = 40)
-    ax.set_xlabel("Iterations", fontsize =30)
+    ax.set_xlabel("Time", fontsize =30)
     ax.set_ylabel("Log loss", fontsize = 30)
     ax.tick_params(axis='both', which='major', labelsize=24)
     ax.scatter(list(range(epoch+1)), np.log10(loss), marker = '.', alpha = 0.3)
@@ -363,7 +363,7 @@ def visualize_training(epoch, loss, x0, x):
 def save_loss_plot(n_epochs: int, model_losses: list, filename: str):
     
     plt.scatter(list(range(n_epochs)), np.log10(model_losses), marker = '.', alpha = 0.3)
-    plt.xlabel("Iterations", fontsize =12)
+    plt.xlabel("Time", fontsize =12)
     plt.ylabel("Log loss", fontsize = 12)
     plt.title("Loss history", fontsize = 18)
     plt.tight_layout()

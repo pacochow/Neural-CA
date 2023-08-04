@@ -55,7 +55,8 @@ class Grid:
                 
             
             if env is not None: 
-                new_env = env*modulate_vals
+                if params.modulate_env == True:
+                    new_env = env*modulate_vals
                 if params.dynamic_env == True:
                     new_env = self.get_env(t, new_env, params.dynamic_env_type)
                 env_history[t, :, :, :] = new_env[0, :].numpy()

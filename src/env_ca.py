@@ -34,8 +34,6 @@ class Env_CA(nn.Module):
         self.relu = nn.ReLU()
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
-        self.conv1.bias.requires_grad = False
-        self.conv2.bias.requires_grad = False
         
         # self.extra = nn.Conv2d(self.hidden_units, 200, 1)
         # nn.init.xavier_uniform_(self.extra.weight)
@@ -45,11 +43,11 @@ class Env_CA(nn.Module):
         self.params = params
         self.knockout = self.params.knockout
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor, living_cells = None):
         out = self.relu(self.conv1(x))
         if self.knockout == True:
             for i in self.params.knockout_unit:
-                out[0, i] = 0.5
+                out[0, i] = 0.5*living_cells
         self.hidden_activity = out
         # out = self.relu(self.extra(out))
         
@@ -124,7 +122,7 @@ class Env_CA(nn.Module):
         
         # Pre update life mask
         pre_mask = self.alive_masking(state_grid)
-        
+
         # Perceive
         if self.env == True:
             
@@ -141,8 +139,8 @@ class Env_CA(nn.Module):
             # Apply update rule to all cells
             for i in range(perception_grid.shape[-1]):
                 for j in range(perception_grid.shape[-1]):
-                    self.knockout = True if 30<i<40 and 5<j<20 else False
-                    ds_grid[:, :, i, j] = self.forward(perception_grid[:, :, i:i+1, j:j+1])[..., 0, 0]
+                    self.knockout = True if 30<i<50 and 5<j<20 else False
+                    ds_grid[:, :, i, j] = self.forward(perception_grid[:, :, i:i+1, j:j+1], state_grid[0, 3, i, j])[..., 0, 0]
             
 
         # Stochastic update mask

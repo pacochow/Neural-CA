@@ -104,7 +104,8 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
             for t in range(iterations):
                 
                 # Modulate the environment so that environment is only visible where there are cells
-                new_env = modulate_vals*repeated_env
+                if params.modulate_env == True:
+                    new_env = modulate_vals*repeated_env
                 
                 # Get new environment
                 if params.dynamic_env == True:
