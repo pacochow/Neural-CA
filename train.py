@@ -15,8 +15,8 @@ params = {
     
 'grid_size': 50,
 'model_channels': 16, 
-'env_channels': 2,       
-'hidden_units': 400,                    # Number of units in hidden layer
+'env_channels': 1,       
+'hidden_units': 420,                    # Number of units in hidden layer
 'fire_rate': 0.5,
         
 # Training params
@@ -61,17 +61,17 @@ if params.env_channels == 0:
     env = None
 else:
     env = grid.init_env(params.env_channels)
-    # env = grid.add_env(env, "linear", channel = 0, angle = 45)
+    env = grid.add_env(env, "linear", channel = 0, angle = 45)
     # env = grid.add_env(env, "circle", channel = 0, center = (grid_size/2, grid_size/2))
-    env = grid.add_env(env, "directional proportional", channel = 0, angle = -45)
+    # env = grid.add_env(env, "directional proportional", channel = 0, angle = -45)
 
 # Train model
 model_losses = train(model, model_name, grid, env, params)
 
 
 # Calculate number of params
-# total_params = 0
-# trainable_params = 0
+total_params = 0
+trainable_params = 0
 
 # for param in model.parameters():
 #     total_params += torch.prod(torch.tensor(param.shape)).item()  # Count total parameters
