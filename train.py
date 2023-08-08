@@ -62,7 +62,7 @@ if params.env_channels == 0:
 else:
     env = grid.init_env(params.env_channels)
     # env = grid.add_env(env, "linear", channel = 0, angle = 45)
-    env = grid.add_env(env, "circle", channel = 0, center = (grid_size/2, grid_size/2))
+    env = grid.add_env(env, "circle", channel = 0, center = (params.grid_size/2, params.grid_size/2))
     # env = grid.add_env(env, "directional proportional", channel = 0, angle = -45)
 
 # Train model
