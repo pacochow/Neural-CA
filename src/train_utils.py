@@ -88,9 +88,9 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                 
                 # Angle each environment in the batch based on initialised angles
                 for i in range(params.batch_size):
-                    # repeated_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
-                    #                                 center = (grid_size/2, grid_size/2))
-                    repeated_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
+                    repeated_env[i] = grid.add_env(env, type = 'directional', channel = 0, angle = angles[i]-45, 
+                                                    center = (grid_size/2, grid_size/2))
+                    # repeated_env[i] = grid.add_env(env, type = 'linear', channel = 0, angle = angles[i]+45)
                 
                 
             

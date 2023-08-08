@@ -14,9 +14,9 @@ params = {
 #   Model params
     
 'grid_size': 50,
-'model_channels': 16, 
+'model_channels': 4, 
 'env_channels': 1,       
-'hidden_units': 420,                    # Number of units in hidden layer
+'hidden_units': 128,                    # Number of units in hidden layer
 'fire_rate': 0.5,
         
 # Training params
@@ -33,7 +33,7 @@ params = {
 'dynamic_env_type': "fade out",          # Type of dynamic environment
 'env_output': False,                    # Train with model output to environment
 'modulate_env': False,                   # Use alpha channel to modulate environment
-'angle_target': True,                   # Train with rotation-invariance
+'angle_target': False,                   # Train with rotation-invariance
 'knockout': False,                       # Whether hidden unit is fixed
 'knockout_unit': 6,                     # Hidden unit to fix
 'device': device}
@@ -70,8 +70,8 @@ model_losses = train(model, model_name, grid, env, params)
 
 
 # Calculate number of params
-total_params = 0
-trainable_params = 0
+# total_params = 0
+# trainable_params = 0
 
 # for param in model.parameters():
 #     total_params += torch.prod(torch.tensor(param.shape)).item()  # Count total parameters
