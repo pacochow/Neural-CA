@@ -66,7 +66,7 @@ else:
     # env = grid.add_env(env, "directional proportional", channel = 0, angle = -45)
 
 # Train model
-# model_losses = train(model, model_name, grid, env, params)
+model_losses = train(model, model_name, grid, env, params)
 
 
 # Calculate number of params
