@@ -58,7 +58,7 @@ grid = Grid(params)
 
 # Initialise names and environment
 if params.env_channels == 0:
-    env = None
+    env = torch.zeros(1, params.env_channels, params.grid_size, params.grid_size)
 else:
     env = grid.init_env(params.env_channels)
     # env = grid.add_env(env, "linear", channel = 0, angle = 45)
