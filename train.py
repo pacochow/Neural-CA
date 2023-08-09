@@ -14,8 +14,8 @@ params = {
 #   Model params
     
 'grid_size': 50,
-'model_channels': 17, 
-'env_channels': 0,       
+'model_channels': 16, 
+'env_channels': 1,       
 'hidden_units': 128,                    # Number of units in hidden layer
 'fire_rate': 0.5,
         
