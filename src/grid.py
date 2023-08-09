@@ -41,7 +41,7 @@ class Grid:
         env_history = np.zeros((params.iterations, model.env_channels, self.grid_size, self.grid_size))
         new_env = copy.deepcopy(env)
         
-        modulate_vals = state_grid[:, 4]
+        modulate_vals = state_grid[:, 3]
         
         hidden_history = np.zeros((len(params.hidden_loc), params.iterations, model.hidden_units))
         # hidden_history = np.zeros((len(params.hidden_loc), params.iterations, 200))
@@ -145,7 +145,7 @@ class Grid:
             if t <= 10:
                 radius = 20
             else:
-                radius = 20+10*np.sin(0.2*(t-10))
+                radius = 20+5*np.sin(0.05*(t-10))
             env = self.add_env(env, type = 'circle', center = (self.grid_size/2, self.grid_size/2), circle_radius = radius)
             return env
         elif type == 'translation':
@@ -153,14 +153,14 @@ class Grid:
                 mid = 50
             elif t <= 50:
                 mid = 50 - (t - 20)
-            elif 150 <= t <= 210:
-                mid = 20 + (t - 150)
-            elif t <= 350:
+            # elif 150 <= t <= 210:
+            #     mid = 20 + (t - 150)
+            elif t <= 100:
                 return env
             else:
-                mid = 20
-            # env = self.add_env(env, type = 'circle', center = (mid, mid))
-            env = self.add_env(env, type = 'directional', angle = -45, center = (mid, mid))
+                mid = 80
+            env = self.add_env(env, type = 'circle', center = (mid, mid))
+            # env = self.add_env(env, type = 'directional', angle = -45, center = (mid, mid))
             return env
         elif type == 'phase':
             opacity = 0.5+0.5*np.sin(0.2*(t+10*np.pi/4))
