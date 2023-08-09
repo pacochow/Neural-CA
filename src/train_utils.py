@@ -102,15 +102,17 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
             new_env = copy.deepcopy(repeated_env)
             
             for t in range(iterations):
-                
-                # Modulate the environment so that environment is only visible where there are cells
-                if params.modulate_env == True:
-                    new_env = modulate_vals*repeated_env
+            
                 
                 # Get new environment
                 if params.dynamic_env == True:
                     
-                    new_env = grid.get_env(t, new_env, type = params.dynamic_env_type)
+                    new_env = grid.get_env(t, repeated_env, type = params.dynamic_env_type)
+                    
+                # Modulate the environment so that environment is only visible where there are cells
+                if params.modulate_env == True:
+                    new_env = modulate_vals*new_env
+                    
                 x, new_env = model.update(x, new_env)
                 
                 # Modulate with transparency channel
