@@ -99,19 +99,18 @@ def train(model: nn.Module, model_name: str, grid, env: torch.Tensor, params):
                 repeated_env = env.repeat(params.batch_size, 1, 1, 1)
 
             
-            new_env = copy.deepcopy(repeated_env)
-            
             for t in range(iterations):
             
-                
+                updated_env = copy.deepcopy(repeated_env)
                 # Get new environment
                 if params.dynamic_env == True:
                     
-                    new_env = grid.get_env(t, repeated_env, type = params.dynamic_env_type)
-                    
+                    updated_env = grid.get_env(t, repeated_env, type = params.dynamic_env_type)
+ 
+                new_env = copy.deepcopy(updated_env)
                 # Modulate the environment so that environment is only visible where there are cells
                 if params.modulate_env == True:
-                    new_env = modulate_vals*new_env
+                    new_env = modulate_vals*updated_env
                     
                 x, new_env = model.update(x, new_env)
                 
