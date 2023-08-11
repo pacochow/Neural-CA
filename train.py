@@ -15,8 +15,8 @@ params = {
     
 'grid_size': 50,
 'model_channels': 16, 
-'env_channels': 1,       
-'hidden_units': 128,                    # Number of units in hidden layer
+'env_channels': 2,       
+'hidden_units': 400,                    # Number of units in hidden layer
 'fire_rate': 0.5,
         
 # Training params
@@ -29,11 +29,11 @@ params = {
 'gamma': 0.3,                           # Gamma factor for learning rate scheduler
 'decay': 3e-4,                          # Weight decay for adam
 'n_epochs': 8000,
-'dynamic_env': True,                   # Train with dynamic environment
+'dynamic_env': False,                   # Train with dynamic environment
 'dynamic_env_type': "phase",          # Type of dynamic environment
 'env_output': False,                    # Train with model output to environment
-'modulate_env': False,                   # Use alpha channel to modulate environment
-'angle_target': False,                   # Train with rotation-invariance
+'modulate_env': True,                   # Use alpha channel to modulate environment
+'angle_target': True,                   # Train with rotation-invariance
 'knockout': False,                       # Whether hidden unit is fixed
 'knockout_unit': 6,                     # Hidden unit to fix
 'device': device}
@@ -43,15 +43,15 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/gecko.npy")
+img = np.load("./media/ladybug.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
 
 
 # Initialise model and grid
-torch.manual_seed(0)
-np.random.seed(0)
+torch.manual_seed(1)
+np.random.seed(1)
 model = Env_CA(target_img, params)
 
 grid = Grid(params)
@@ -62,8 +62,8 @@ if params.env_channels == 0:
 else:
     env = grid.init_env(params.env_channels)
     # env = grid.add_env(env, "linear", channel = 0, angle = 45)
-    env = grid.add_env(env, "circle", channel = 0, center = (params.grid_size/2, params.grid_size/2))
-    # env = grid.add_env(env, "directional proportional", channel = 0, angle = -45)
+    # env = grid.add_env(env, "circle", channel = 0, center = (params.grid_size/2, params.grid_size/2))
+    env = grid.add_env(env, "directional proportional", channel = 0, angle = -45)
 
 # Train model
 model_losses = train(model, model_name, grid, env, params)
