@@ -29,8 +29,8 @@ params = {
 'gamma': 0.3,                           # Gamma factor for learning rate scheduler
 'decay': 3e-4,                          # Weight decay for adam
 'n_epochs': 8000,
-'dynamic_env': False,                   # Train with dynamic environment
-'dynamic_env_type': "phase",          # Type of dynamic environment
+'dynamic_env': True,                   # Train with dynamic environment
+'dynamic_env_type': "fade out",          # Type of dynamic environment
 'env_output': False,                    # Train with model output to environment
 'modulate_env': True,                   # Use alpha channel to modulate environment
 'angle_target': True,                   # Train with rotation-invariance
@@ -43,15 +43,15 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/ladybug.npy")
+img = np.load("./media/gecko.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
 
 
 # Initialise model and grid
-torch.manual_seed(1)
-np.random.seed(1)
+torch.manual_seed(0)
+np.random.seed(0)
 model = Env_CA(target_img, params)
 
 grid = Grid(params)
