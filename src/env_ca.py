@@ -47,7 +47,7 @@ class Env_CA(nn.Module):
         out = self.relu(self.conv1(x))
         if self.knockout == True:
             for i in self.params.knockout_unit:
-                out[0, i] = 0.5*living_cells
+                out[0, i] = 0*living_cells
         self.hidden_activity = out
         # out = self.relu(self.extra(out))
         
@@ -106,7 +106,6 @@ class Env_CA(nn.Module):
         
         # Random mask 
         rand_mask = (torch.rand(ds_grid.shape[0], 1, ds_grid.shape[-1], ds_grid.shape[-1])<=self.fire_rate).to(self.device)
-   
         return grid+ds_grid*rand_mask
 
     def alive_masking(self, state_grid: torch.Tensor) -> torch.Tensor:
@@ -133,7 +132,7 @@ class Env_CA(nn.Module):
             perception_grid = self.perceive(state_grid, angle)
         
         if manual == False:
-            ds_grid = self.forward(perception_grid)
+            ds_grid = self.forward(perception_grid, state_grid[0, 3])
         else:
             ds_grid = torch.zeros(perception_grid.shape[0], self.model_channels, perception_grid.shape[-1], perception_grid.shape[-1])
             # Apply update rule to all cells
