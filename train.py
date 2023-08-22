@@ -16,7 +16,7 @@ params = {
 'grid_size': 50,
 'model_channels': 16, 
 'env_channels': 2,       
-'hidden_units': 400,                    # Number of units in hidden layer
+'hidden_units': 128,                    # Number of units in hidden layer
 'fire_rate': 0.5,
         
 # Training params
@@ -32,7 +32,7 @@ params = {
 'dynamic_env': False,                   # Train with dynamic environment
 'dynamic_env_type': "fade out",          # Type of dynamic environment
 'env_output': False,                    # Train with model output to environment
-'modulate_env': True,                   # Use alpha channel to modulate environment
+'modulate_env': False,                   # Use alpha channel to modulate environment
 'angle_target': True,                   # Train with rotation-invariance
 'knockout': False,                       # Whether hidden unit is fixed
 'knockout_unit': 6,                     # Hidden unit to fix
@@ -43,15 +43,15 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/ladybug.npy")
+img = np.load("./media/gecko.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
 
 
 # Initialise model and grid
-# torch.manual_seed(0)
-# np.random.seed(0)
+torch.manual_seed(0)
+np.random.seed(0)
 model = Env_CA(target_img, params)
 
 grid = Grid(params)
