@@ -35,6 +35,7 @@ class Env_CA(nn.Module):
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
         
+        # For model with extra hidden layer
         # self.extra = nn.Conv2d(self.hidden_units, 200, 1)
         # nn.init.xavier_uniform_(self.extra.weight)
         # nn.init.zeros_(self.extra.bias)
@@ -45,9 +46,13 @@ class Env_CA(nn.Module):
 
     def forward(self, x: torch.Tensor, living_cells = None):
         out = self.relu(self.conv1(x))
+        
+        # If performing experiment with knockout, only knockout pixels with living cells
         if self.knockout == True:
             for i in self.params.knockout_unit:
                 out[0, i] = 0*living_cells
+                
+        # Save activation of hidden units
         self.hidden_activity = out
         # out = self.relu(self.extra(out))
         
@@ -119,6 +124,11 @@ class Env_CA(nn.Module):
     
     def update(self, state_grid: torch.Tensor, env = None, angle = 0.0, manual = False) -> torch.Tensor:
         
+        """
+        Takes in state as input and outputs updated state at next time iteration
+        """
+        
+        
         # Pre update life mask
         pre_mask = self.alive_masking(state_grid)
 
@@ -131,9 +141,12 @@ class Env_CA(nn.Module):
         else: 
             perception_grid = self.perceive(state_grid, angle)
         
+        
         if manual == False:
+            # If manual is set to False, apply neural network to all pixels simultaneously
             ds_grid = self.forward(perception_grid, state_grid[0, 3])
         else:
+            # If manual is set to True, loop over each pixel sequentially (for knocking out units at specific pixels)
             ds_grid = torch.zeros(perception_grid.shape[0], self.model_channels, perception_grid.shape[-1], perception_grid.shape[-1])
             # Apply update rule to all cells
             for i in range(perception_grid.shape[-1]):
@@ -145,7 +158,7 @@ class Env_CA(nn.Module):
         # Stochastic update mask
         if self.env_output == True:
             
-            # If env_output = True, update full grid 
+            # If env_output = True, update full grid with state and environment
             full_grid = self.stochastic_update(full_grid, ds_grid)
             state_grid = full_grid[:, :self.model_channels]
             env = full_grid[:, -1].unsqueeze(1)

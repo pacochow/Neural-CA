@@ -1,4 +1,5 @@
 import numpy as np
+import torch.nn as nn
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
@@ -10,6 +11,10 @@ from tqdm import tqdm
 
 
 def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params):
+
+    """
+    Animate development using history of states and environment states
+    """
 
     fps = params.iterations/params.nSeconds
 
@@ -63,6 +68,10 @@ def create_animation(states: np.ndarray, envs: np.ndarray, filename: str, params
 
     
 def visualize_hidden_units(states: np.ndarray, hidden_states: np.ndarray, filename: str, params):
+
+    """
+    Visualise animation of hidden unit activity
+    """
 
     hidden_states = hidden_states.reshape(len(params.hidden_loc), params.iterations, 20, 20)
     
@@ -148,7 +157,7 @@ def visualize_single_hidden_unit(hidden_unit_history: dict, units: list, filenam
     
 
     # First set up the figure, the axis, and the plot elements we want to animate
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  # 4 subplots for 4 animations
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows)) 
 
 
     # Create an array to hold your image objects
@@ -208,10 +217,15 @@ def load_progress_states(model_name: str, grid, params, env = None):
     return states
 
 def create_progress_animation(states: np.ndarray, filename: str, params):
+    
+    """
+    Animate model run at each saved epoch 
+    """
+    
     fps = params.iterations/params.nSeconds
 
     # First set up the figure, the axis, and the plot elements we want to animate
-    fig, axs = plt.subplots(nrows=1, ncols=4, figsize=(32,8))  # 4 subplots for 4 animations
+    fig, axs = plt.subplots(nrows=1, ncols=4, figsize=(32,8))
     
     # Clip values between 0 and 1
     states = states.clip(0, 1)[...,:4]
@@ -257,6 +271,10 @@ def create_progress_animation(states: np.ndarray, filename: str, params):
 
 def visualize_all_channels(states: np.ndarray, filename: str, n_channels: int, params):
 
+    """
+    Visualize animation of all channel states throughout development
+    """
+
     fps = params.iterations/params.nSeconds
 
     ncols = 5
@@ -265,7 +283,7 @@ def visualize_all_channels(states: np.ndarray, filename: str, n_channels: int, p
     
 
     # First set up the figure, the axis, and the plot elements we want to animate
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  # 4 subplots for 4 animations
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  
 
     # Clip values between 0 and 1
     states = states.clip(0, 1)
@@ -324,6 +342,11 @@ def plot_log_loss(ax, epoch, loss):
     ax.scatter(list(range(epoch+1)), np.log10(loss), marker = '.', alpha = 0.3)
 
 def visualize_batch(axs, x0, x):
+    
+    """
+    Visualise developmental outcome of each training batch
+    """
+    
     x0 = state_to_image(x0)[..., :4].detach().cpu().numpy().clip(0, 1)
     x = state_to_image(x)[..., :4].detach().cpu().numpy().clip(0, 1)
 
@@ -340,6 +363,11 @@ def visualize_batch(axs, x0, x):
     axs[1, 0].set_title('After', loc='left', fontsize = 30)
 
 def visualize_training(epoch, loss, x0, x):
+    
+    """
+    Visualise loss plot with developmental outcome of each training batch
+    """
+    
     fig = plt.figure(figsize=(20, 15))
     gs = gridspec.GridSpec(3, 1, height_ratios=[3, 1, 1]) 
 
@@ -369,31 +397,40 @@ def save_loss_plot(n_epochs: int, model_losses: list, filename: str):
     plt.tight_layout()
     plt.savefig(filename)
     
-def visualize_seed_losses(model_name: str, grid, filename, params, env = None):
+def visualize_seed_losses(model: nn.Module, grid, filename: str, params, env = None):
+
+    """
+    Run model at each seed position and compute loss. Visualise loss at each position with heatmap.
+    """
+
+    losses = np.zeros((params.grid_size, params.grid_size))
     
-    model = torch.load(f"./models/{model_name}/final_weights.pt")
-    losses = np.zeros((model.grid_size, model.grid_size))
-    
-    for i in tqdm(range(model.grid_size)):
-        for j in range(model.grid_size):
+    # For every position on grid, start seed at that position and run model
+    for i in tqdm(range(params.grid_size)):
+        for j in range(params.grid_size):
             
+            params.seed = [i, j]
             states, _, _ = grid.run(model, env, params)
             states = states[...,:4]
              # Compute loss
             losses[i, j] = ((states[-1]-model.target.numpy())**2).mean()
     
-    plt.imshow(np.log10(losses), vmax = 0)
-    plt.title(f"Log loss at different seed positions\n{model_name}")
+    plt.imshow(np.log10(losses), vmax = 0, vmin = -3)
+    # plt.title(f"Log loss at different seed positions", fontsize = 15)
     plt.colorbar()
     plt.tight_layout()
-    plt.savefig(filename)
+    plt.savefig(filename, bbox_inches = 'tight')
     plt.show()
 
-
-
-    
     
 def visualize_pruning(model_name: str, grid, filename: str, params, env = None):
+    
+    """
+    Visualise development outcomes after pruning model by different percentages
+
+    :return: _description_
+    :rtype: _type_
+    """
     
     model = torch.load(f"./models/{model_name}/final_weights.pt")
     
@@ -465,6 +502,10 @@ def visualize_pruning(model_name: str, grid, filename: str, params, env = None):
 
 def visualize_pruning_by_channel(model: nn.Module, grid, filename: str, params, env: torch.Tensor = None):
     
+    """
+    Visualise development animation after pruning each channel
+    """
+    
     fps = params.iterations/params.nSeconds
     n_channels = model.model_channels
     ncols = 5
@@ -484,7 +525,7 @@ def visualize_pruning_by_channel(model: nn.Module, grid, filename: str, params, 
 
 
     # First set up the figure, the axis, and the plot elements we want to animate
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  # 4 subplots for 4 animations
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows))  
 
     # Clip values between 0 and 1
     states = states.clip(0, 1)
@@ -529,19 +570,13 @@ def visualize_pruning_by_channel(model: nn.Module, grid, filename: str, params, 
     print(' Pruning animation done!')
     
 
-def visualize_unit_effect_loss(model: nn.Module, grid, env, params, filename: str):
-    _, loss = prune_by_unit(model, grid, env, params)
-    units = np.arange(model.hidden_units)
-    plt.scatter(units, np.log10(loss))
-    plt.xlabel("Unit")
-    plt.ylabel("Log loss after ablation")
-    plt.savefig(filename)
-    plt.show()
+def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, manual: bool, filename: str):
     
-    return loss
-
-def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, filename: str):
-    phenotypes, _ = prune_by_unit(model, grid, env, params, prune_units = prune_units)
+    """
+    Visualise development outcome after knocking out given hidden units 
+    """
+    
+    phenotypes, _ = prune_by_unit(model, grid, env, params, prune_units = prune_units, manual = manual)
     phenotypes = phenotypes.clip(0, 1)
     
     ncols = 10
@@ -553,10 +588,11 @@ def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, file
     for i, ax in enumerate(axs.flatten()):
 
         ax.imshow(phenotypes[i])
+        ax.set_title(prune_units[i], fontsize = 80)
         ax.axis('off')  # Hide axis
 
     plt.tight_layout()
-    plt.savefig(filename)
+    plt.savefig(filename, bbox_inches = 'tight')
     plt.show()
     
     

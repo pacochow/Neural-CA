@@ -33,40 +33,47 @@ def get_parameter_size(model: nn.Module) -> nn.Module:
 
 
 def prune_by_percent(model: nn.Module, percent: float):
+  """
+  Prunes model by percentage specified by input parameter
+  """
     
-    finished = False
-    model_size = get_parameter_size(model)
-    tolerance = 100
-    desired_size = model_size*(100-percent)/100
-    
-    lower_bound = 0.001
-    upper_bound = 0.5
-    guess = (lower_bound+upper_bound)/2
-    
-    while finished == False:
-        
-        # Prune model based on guessed threshold
-        pruned_model = prune_network(model, threshold = guess)
-        # Calculate size of pruned model
-        pruned_size = get_parameter_size(pruned_model)
-        # If pruned model size is not within tolerance, update guess
-        if desired_size - tolerance <= pruned_size <= desired_size + tolerance:  
-            finished = True
-        else:
-            # Apply binary search algorithm
-            diff = np.abs(desired_size - pruned_size)
-            if pruned_size < desired_size:
-                upper_bound -= 0.1 * diff/desired_size
-            else:
-                lower_bound += 0.1 * diff/desired_size
-            
-            guess = (lower_bound+upper_bound)/2
-    pruned_percentage = (model_size - pruned_size)*100/model_size
-    # print(f'Pruning completed! {pruned_percentage:.2f}% of the model was pruned.\n')
-    return model_size, pruned_size, pruned_model
+  finished = False
+  model_size = get_parameter_size(model)
+  tolerance = 100
+  desired_size = model_size*(100-percent)/100
+  
+  lower_bound = 0.001
+  upper_bound = 0.5
+  guess = (lower_bound+upper_bound)/2
+  
+  while finished == False:
+      
+      # Prune model based on guessed threshold
+      pruned_model = prune_network(model, threshold = guess)
+      # Calculate size of pruned model
+      pruned_size = get_parameter_size(pruned_model)
+      # If pruned model size is not within tolerance, update guess
+      if desired_size - tolerance <= pruned_size <= desired_size + tolerance:  
+          finished = True
+      else:
+          # Apply binary search algorithm
+          diff = np.abs(desired_size - pruned_size)
+          if pruned_size < desired_size:
+              upper_bound -= 0.1 * diff/desired_size
+          else:
+              lower_bound += 0.1 * diff/desired_size
+          
+          guess = (lower_bound+upper_bound)/2
+  pruned_percentage = (model_size - pruned_size)*100/model_size
+  # print(f'Pruning completed! {pruned_percentage:.2f}% of the model was pruned.\n')
+  return model_size, pruned_size, pruned_model
   
   
 def compute_pruning_losses(model_name: str, grid, params, env = None) -> tuple:
+  
+  """
+  Compute loss of pattern grown with models pruned with different percentages
+  """
   
   model = torch.load(f"./models/{model_name}/final_weights.pt")
 
@@ -99,6 +106,10 @@ def compute_pruning_losses(model_name: str, grid, params, env = None) -> tuple:
 
 def prune_by_channel(model: nn.Module, channel: int, enhance: bool = False) -> nn.Module:
   
+  """
+  Set specific channel to zeros throughout developmental period
+  """
+  
   model_copy = copy.deepcopy(model)
   
   # Get parameters
@@ -115,27 +126,21 @@ def prune_by_channel(model: nn.Module, channel: int, enhance: bool = False) -> n
 
   return model_copy
 
-def prune_by_unit(model: nn.Module, grid, env, params, prune_units = None):
+def prune_by_unit(model: nn.Module, grid, env, params, prune_units: list, manual = False):
   
-  units = np.arange(model.hidden_units)
+  """
+  Set hidden unit activity to 0 and run model.
+  """
   
-  
-  
-  if prune_units == None:
-    prune_range = units
-  
-  else:
-    prune_range = np.arange(prune_units[0], prune_units[1])
-  
-  losses = np.zeros(len(prune_range))
-  phenotype = np.zeros((len(prune_range), grid.grid_size, grid.grid_size, 4))
+  losses = np.zeros(len(prune_units))
+  phenotype = np.zeros((len(prune_units), grid.grid_size, grid.grid_size, 4))
     
   with torch.no_grad():
-    for i in tqdm(range(len(prune_range))):
-      params.knockout_unit = [units[prune_range[i]]]
+    for i in tqdm(range(len(prune_units))):
+      params.knockout_unit = [prune_units[i]]
       
       # Run model
-      state_history, _, _ = grid.run(model, env, params, manual = True)
+      state_history, _, _ = grid.run(model, env, params, manual = manual)
 
       # Compute loss
       target = rotate_image(model.target, params.env_angle+45)
@@ -148,6 +153,10 @@ def prune_by_unit(model: nn.Module, grid, env, params, prune_units = None):
 
 
 def comparing_pruning_losses(model1: str, grid1, env1, model2: str, grid2, env2, filename: str, params):
+    
+  """
+  Plot comparison of pruning losses for different models
+  """
     
     percents, loss1 = compute_pruning_losses(model1, grid1, params.iterations, params.angle, env1)
     percents, loss2 = compute_pruning_losses(model2, grid2, params.iterations, params.angle, env2)

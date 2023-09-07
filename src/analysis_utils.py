@@ -7,79 +7,6 @@ from sklearn.decomposition import PCA
 from helpers.helpers import rotate_image
 from matplotlib_venn import venn3, venn3_circles
 
-def plot_parameter_sizes(model_name: str, filename: str):
-
-    model = torch.load(f"./models/{model_name}/final_weights.pt")
-    
-    # Get parameters
-    params = [x.data for x in model.parameters()]
-    
-    # Average over all weights for each channel to give array of length num_channels
-    weights = np.abs(params[2][:, :, 0, 0].mean(dim = 1).numpy())
-
-    # Categories and numbers
-    categories = list(range(1, model.model_channels+1))
-
-    # Bar chart
-    x = np.arange(len(categories))  # Label locations
-
-    fig, ax = plt.subplots()
-    rects = ax.bar(x[:model.model_channels], weights[:model.model_channels], label='Model channels')
-
-    # Special label for the last category
-    if model.env_channels > 0 and model.env_output == True:
-        rects_last = ax.bar(x[-1], weights[-1], label='Environment channel')
-
-    # Add some text for labels, title and custom x-axis tick labels
-    ax.set_ylabel('Parameter size', fontsize = 13)
-    ax.set_xlabel('Channels', fontsize = 13)
-    ax.set_title('Mean size of parameters for each channel', fontsize = 16)
-    ax.set_xticks(x)
-    ax.set_xticklabels(categories, rotation = 0)
-    ax.legend()
-
-    plt.savefig(filename)
-    plt.show()
-
-def cluster_hidden_units(model: nn.Module, filename: str = None):
-    
-    """
-    Perform PCA on weights of each hidden unit and cluster 
-    """
-
-    params = [i for i in model.parameters()]
-    input_weights = params[0].squeeze(-2, -1).detach().numpy()
-    bias = params[1].unsqueeze(1).detach().numpy()
-    output_weights = params[2].squeeze(-2, -1).reshape(model.hidden_units, model.model_channels).detach().numpy()
-    X = np.concatenate([input_weights, bias, output_weights], axis = 1)
-
-    # assume X is your data
-
-    # Apply PCA for dimensionality reduction (optional)
-    pca = PCA(n_components=30);  # or another number less than 54
-    X_pca = pca.fit_transform(X)
-
-    # Create a kmeans model
-    kmeans = KMeans(n_clusters=2); # you can change the number of clusters
-    kmeans.fit(X_pca)
-
-    # Get the cluster assignments for each data point
-    clusters = kmeans.predict(X_pca)
-
-
-    plt.figure(figsize=(10, 7))
-    plt.scatter(X_pca[:, 0], X_pca[:, 1], c=clusters, cmap='viridis')
-
-    plt.xlabel('First Principal Component')
-    plt.ylabel('Second Principal Component')
-    plt.title('Visualization of clustered data', fontweight='bold')
-    plt.colorbar()
-    if filename is not None:
-        plt.savefig(filename)
-    plt.show()
-    
-    return clusters, X_pca
-
 def find_hox_units(hidden_unit_history: dict, living_cells, phase: tuple) -> np.ndarray:
     
     """
@@ -105,27 +32,39 @@ def find_hox_units(hidden_unit_history: dict, living_cells, phase: tuple) -> np.
     return development_profiles, sorted
     
     
-def plot_expression_profiles(normalized_profiles: np.ndarray, sorted_list: np.ndarray, filename: str):
-    plt.figure(figsize = (10, 8))
+def plot_expression_profiles(profiles: np.ndarray, sorted_list: np.ndarray, filename: str):
+    
+    """
+    Plot activity profiles of hidden units. Hidden unit profiles are given by input parameter profiles and 
+    hidden unit number are given by input parameter sorted_list. 
+    """
+    
+    plt.figure(figsize = (14, 8))
 
     # Find hox genes
     for i in sorted_list[:20]:
         
-        plt.plot(normalized_profiles[:,i]);
+        plt.plot(profiles[:,i], linewidth = 3);
 
     plt.legend(sorted_list[:20], fontsize = 16)
-    plt.xlabel("Iterations", fontsize = 18)
+    plt.xlabel("Developmental time (iterations)", fontsize = 18)
     plt.ylabel("Unit activity", fontsize = 18)
-    plt.yticks(fontsize=18)
+    plt.yticks(fontsize = 18)
     plt.xticks(fontsize = 18)
-    plt.axvline(20, color = 'black', linestyle = 'dashed')
-    
+    # plt.axvline(20, color = 'black', linestyle = 'dashed')
+    for pos in ['right', 'top']:
+        plt.gca().spines[pos].set_visible(False)
     plt.tight_layout()
-    plt.savefig(filename)
+    plt.savefig(filename, bbox_inches = 'tight')
     plt.show()
     
     
 def progressive_knockout_loss(model: nn.Module, units: np.ndarray, grid, env, params):
+    
+    """
+    Progressively knockout hidden units and returns final phenotype and loss
+    """
+    
     losses = []
     
     for i in range(30):
@@ -143,7 +82,9 @@ def progressive_knockout_loss(model: nn.Module, units: np.ndarray, grid, env, pa
         losses.append(loss)
         
         
-    return losses
+    final_phenotype = state_history[-1, :, :, :4]
+    
+    return final_phenotype, losses
         
         
 def quantify_retrain_improvement(naive_loss, retrain_loss, difference = False):
@@ -179,12 +120,17 @@ def quantify_retrain_improvement(naive_loss, retrain_loss, difference = False):
     
     
 
-def compare_developmental_stages(early, mid, late):
+def compare_developmental_stages(early: list, mid: list, late: list, filename: str):
+    
+    """
+    Takes in hox units at different developmental stages and plots Venn diagram.
+    """
+    
     set1 = set(early[:20])
     set2 = set(mid[:20])
     set3 = set(late[:20])
 
-    plt.figure(figsize=(10, 10))  
+    plt.figure(figsize=(7, 7))  
     v=venn3([set1, set2, set3], ["Early", "Mid", "Late"])
     # Customizing the labels
     v.get_label_by_id('100').set_text('\n'.join(map(str, set1 - set2 - set3)))
@@ -195,4 +141,6 @@ def compare_developmental_stages(early, mid, late):
     v.get_label_by_id('011').set_text('\n'.join(map(str, (set2 & set3) - set1)))
     v.get_label_by_id('111').set_text('\n'.join(map(str, set1 & set2 & set3)))
 
+    plt.tight_layout()
+    plt.savefig(filename, bbox_inches = 'tight')
     plt.show()

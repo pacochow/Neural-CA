@@ -9,6 +9,8 @@ from matplotlib.colors import LinearSegmentedColormap
 import torch.nn.functional as F
 import math
 
+# Helper functions for loading image
+
 def np2pil(a):
   if a.dtype in [np.float32, np.float64]:
     a = np.uint8(np.clip(a, 0, 1)*255)

@@ -7,6 +7,7 @@ import copy
 class Grid:
     
     def __init__(self, params):
+        
         self.grid_size = params.grid_size
         self.model_channels = params.model_channels
     
@@ -39,7 +40,7 @@ class Grid:
         state_grid = self.init_seed(self.grid_size, params.seed)
         state_history = np.zeros((params.iterations, self.grid_size, self.grid_size, model.model_channels))
         env_history = np.zeros((params.iterations, model.env_channels, self.grid_size, self.grid_size))
-        new_env = copy.deepcopy(env)
+        
         
         modulate_vals = state_grid[:, 3]
         
@@ -48,6 +49,7 @@ class Grid:
         
         for t in range(params.iterations):
             
+            # Uncomment to perform knockout experiment at specific time iterations
             # if t < params.iterations/2:
             #     model.knockout = True
             # else:
@@ -55,10 +57,16 @@ class Grid:
                 
             
             if env is not None: 
-                if params.modulate_env == True:
-                    new_env = env*modulate_vals
+                updated_env = copy.deepcopy(env)
                 if params.dynamic_env == True:
-                    new_env = self.get_env(t, new_env, params.dynamic_env_type)
+                    updated_env = self.get_env(t, env, params.dynamic_env_type)
+                    
+                new_env = copy.deepcopy(updated_env)
+                
+                # Modulate environment with alpha channel
+                if params.modulate_env == True:
+                    new_env = updated_env*modulate_vals
+                    
                 env_history[t, :, :, :] = new_env[0, :].numpy()
                 
                 
@@ -71,9 +79,10 @@ class Grid:
                 # Update step
                 state_grid, new_env = model.update(state_grid, new_env, angle = params.angle, manual = manual)
 
-                # Modulate with transparency channel
+                # Save alpha channel for modulating environment
                 modulate_vals = state_to_image(state_grid)[..., 3]
                 
+                # Save hidden unit activation history
                 if params.vis_hidden == True:
                     for i in range(len(params.hidden_loc)):
                         hidden_history[i, t] = model.hidden_activity[0, :, params.hidden_loc[i][0], params.hidden_loc[i][1]]
