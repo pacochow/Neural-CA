@@ -55,7 +55,7 @@ class Grid:
             # else:
             #     model.knockout = False
                 
-            
+            new_env = None
             if env is not None: 
                 updated_env = copy.deepcopy(env)
                 if params.dynamic_env == True:
@@ -68,7 +68,6 @@ class Grid:
                     new_env = updated_env*modulate_vals
                     
                 env_history[t, :, :, :] = new_env[0, :].numpy()
-                
                 
                 
             with torch.no_grad():

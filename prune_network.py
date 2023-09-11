@@ -5,10 +5,19 @@ from src.grid import *
 from src.pruning import *
 from src.params import ObjectView
 from helpers.visualizer import *
+from helpers.figures import *
+from src.analysis_utils import *
+import pickle
 
 # Load model
 model_name = "modulated_angled_env_directional_16_2_400"
 model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
+
+
+filename = f'./models/{model_name}/hidden_unit_history.pkl'
+with open(filename, 'rb') as fp:
+    hidden_unit_history = pickle.load(fp)
+living_cells = np.load(f"./models/{model_name}/living_cells.npy")
 
 params = {
        
@@ -16,19 +25,20 @@ params = {
 'model_channels': model.model_channels, 
 'env_channels': model.env_channels,
 'grid_size': 50,
-'iterations': 400,                  # Number of iterations in animation
+'iterations': 100,                  # Number of iterations in animation
 'angle': 0.0,                       # Perceiving angle
 'env_angle': 45,                    # Environment angle
 'dynamic_env': False,               # Run with moving environment
-'dynamic_env_type': 'free move',    # Type of moving environment    
+'dynamic_env_type': 'fade out',    # Type of moving environment    
 'destroy': False,                    # Whether pattern is disrupted mid animation
 'destroy_type': 0,                  # Type of pattern disruption
 'seed': None,                       # Coordinates of seed
 'vis_env': False,                   # Visualize environment in animation
-'vis_hidden': True,                 # Visualize hidden unit activity throughout run
+'vis_hidden': False,                 # Visualize hidden unit activity throughout run
+'modulate_env': True,                # Use alpha channel to modulate environment
 'hidden_loc': [(25, 25), (30, 20)], # Location of where to visualize hidden unit activity
 'knockout': True,                   # Whether hidden unit is fixed
-'knockout_unit': 42,                # Hidden unit to fix
+'knockout_unit': [42],                # Hidden unit to fix
 'nSeconds': 10,                     # Length of animation
 'enhance': False}                   # Increasing activation of a channel                      
 
@@ -48,16 +58,27 @@ grid = Grid(params)
 # Initialise environment
 env = None
 env = grid.init_env(model.env_channels)
-# env = grid.add_env(env, "circle", 0)
+# env = grid.add_env(env, "circle", 0, center = (params.grid_size/2, params.grid_size/2))
 env = grid.add_env(env, "directional", 0, angle = params.env_angle)
 
 # Prune by channel
 # filename = f"./models/{model_name}/visualize_pruning_by_channel.mp4"
 # visualize_pruning_by_channel(model, grid, filename, params, env = env)
 
+# Prune by channel stills
+# filename = f"./models/{model_name}/visualize_pruning_by_channel.png"
+# visualize_pruning_by_channel_stills(model, grid, filename, params, env = env)
+
+
+# Compute loss by units
+# phenotypes, losses = prune_by_unit(model, grid, env, params, list(np.arange(400)), manual = False)
+# important_units = np.argsort(np.log10(losses))[::-1][:10]
+# og_normalized_profiles, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], phase = (35, 60))
+
+
 # Prune by units
-filename = f"./models/{model_name}/knockout_unit_effects_3.png"
-visualize_unit_effect(model, grid, env, params, [300, 400], filename)
+# filename = f"./models/{model_name}/knockout_unit_effects.png"
+# visualize_unit_effect(model, grid, env, params, np.arange(150), False, filename)
 
 
 # # Prune by channel
@@ -71,9 +92,12 @@ visualize_unit_effect(model, grid, env, params, [300, 400], filename)
 # filename = f"./models/{model_name}/pruned_channel_{channel}_run.mp4"
 # create_animation(state_history, _, filename, params)
 
-# Visualise progress animation
+# Visualise pruning progress animation
 # filename = f"./models/{model_name}/pruned_visualization.mp4"
-# visualize_pruning(model_name, grid, filename,  params, env)
+# visualize_pruning(model_name, grid, filename, params, env)
+
+# filename = f"./models/{model_name}/pruned_visualization_still.png"
+# visualize_pruning_stills(model, grid, filename, params, env)
 
 
 

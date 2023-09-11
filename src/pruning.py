@@ -158,13 +158,13 @@ def comparing_pruning_losses(model1: str, grid1, env1, model2: str, grid2, env2,
   Plot comparison of pruning losses for different models
   """
     
-    percents, loss1 = compute_pruning_losses(model1, grid1, params.iterations, params.angle, env1)
-    percents, loss2 = compute_pruning_losses(model2, grid2, params.iterations, params.angle, env2)
-    plt.scatter(percents, np.log10(loss1))
-    plt.scatter(percents, np.log10(loss2))
-    plt.xlabel("Pruned percentage (%)", fontsize =12)
-    plt.ylabel("Log loss", fontsize = 12)
-    plt.title("Loss after pruning", fontsize = 18)
-    plt.legend([model1, model2])
-    plt.tight_layout()
-    plt.savefig(filename)
+  percents, loss1 = compute_pruning_losses(model1, grid1, params.iterations, params.angle, env1)
+  percents, loss2 = compute_pruning_losses(model2, grid2, params.iterations, params.angle, env2)
+  plt.scatter(percents, np.log10(loss1))
+  plt.scatter(percents, np.log10(loss2))
+  plt.xlabel("Pruned percentage (%)", fontsize =12)
+  plt.ylabel("Log loss", fontsize = 12)
+  plt.title("Loss after pruning", fontsize = 18)
+  plt.legend([model1, model2])
+  plt.tight_layout()
+  plt.savefig(filename)
