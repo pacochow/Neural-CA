@@ -15,7 +15,6 @@ class Env_CA(nn.Module):
         self.model_channels = params.model_channels
         self.env_channels = params.env_channels
         self.hidden_units = params.hidden_units
-        self.env_output = params.env_output
         
         self.env = True if self.env_channels > 0 else False
         self.fire_rate = params.fire_rate
@@ -25,20 +24,23 @@ class Env_CA(nn.Module):
         
         # Update network
         self.conv1 = nn.Conv2d(self.input_dim, self.hidden_units, 1)
-        if self.env_output == False:
-            self.conv2 = nn.Conv2d(self.hidden_units, self.model_channels, 1)
-        else:
-            self.conv2 = nn.Conv2d(self.hidden_units, self.num_channels, 1)
+        
         nn.init.xavier_uniform_(self.conv1.weight)
         nn.init.zeros_(self.conv1.bias)
         self.relu = nn.ReLU()
+        
+        if params.n_layers == 2:
+            self.hidden_units_2 = params.hidden_units_2
+            self.extra = nn.Conv2d(self.hidden_units, self.hidden_units_2, 1)
+            nn.init.xavier_uniform_(self.extra.weight)
+            nn.init.zeros_(self.extra.bias)
+            self.conv2 = nn.Conv2d(self.hidden_units_2, self.model_channels, 1)
+        else:
+            self.conv2 = nn.Conv2d(self.hidden_units, self.model_channels, 1)
+        
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
         
-        # For model with extra hidden layer
-        # self.extra = nn.Conv2d(self.hidden_units, 200, 1)
-        # nn.init.xavier_uniform_(self.extra.weight)
-        # nn.init.zeros_(self.extra.bias)
         
         self.device = params.device
         self.params = params
@@ -47,6 +49,9 @@ class Env_CA(nn.Module):
     def forward(self, x: torch.Tensor, living_cells = None):
         out = self.relu(self.conv1(x))
         
+        
+        out = self.relu(self.extra(out))
+        
         # If performing experiment with knockout, only knockout pixels with living cells
         if self.knockout == True:
             for i in self.params.knockout_unit:
@@ -54,7 +59,6 @@ class Env_CA(nn.Module):
                 
         # Save activation of hidden units
         self.hidden_activity = out
-        # out = self.relu(self.extra(out))
         
         out = self.conv2(out)
         
@@ -155,18 +159,10 @@ class Env_CA(nn.Module):
                     ds_grid[:, :, i, j] = self.forward(perception_grid[:, :, i:i+1, j:j+1], state_grid[0, 3, i, j])[..., 0, 0]
             
 
-        # Stochastic update mask
-        if self.env_output == True:
+
             
-            # If env_output = True, update full grid with state and environment
-            full_grid = self.stochastic_update(full_grid, ds_grid)
-            state_grid = full_grid[:, :self.model_channels]
-            env = full_grid[:, -1].unsqueeze(1)
-            
-        else:
-            
-            # Else, only update state grid
-            state_grid = self.stochastic_update(state_grid, ds_grid)
+
+        state_grid = self.stochastic_update(state_grid, ds_grid)
         
         # Post update life mask
         post_mask = self.alive_masking(state_grid)

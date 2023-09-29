@@ -15,8 +15,10 @@ params = {
     
 'grid_size': 50,
 'model_channels': 16, 
-'env_channels': 2,       
-'hidden_units': 128,                    # Number of units in hidden layer
+'env_channels': 2,    
+'n_layers': 2,                          # Number of hidden layers   
+'hidden_units': 100,                    # Number of units in hidden layer
+'hidden_units_2': 50,                  # Number of units in hidden layer 2
 'fire_rate': 0.5,
         
 # Training params
@@ -31,7 +33,6 @@ params = {
 'n_epochs': 8000,
 'dynamic_env': False,                   # Train with dynamic environment
 'dynamic_env_type': "fade out",          # Type of dynamic environment
-'env_output': False,                    # Train with model output to environment
 'modulate_env': False,                   # Use alpha channel to modulate environment
 'angle_target': True,                   # Train with rotation-invariance
 'knockout': False,                       # Whether hidden unit is fixed
