@@ -18,7 +18,7 @@ params = {
 'env_channels': 2,    
 'n_layers': 2,                          # Number of hidden layers   
 'hidden_units': 100,                    # Number of units in hidden layer
-'hidden_units_2': 50,                  # Number of units in hidden layer 2
+'hidden_units_2': 200,                  # Number of units in hidden layer 2
 'fire_rate': 0.5,
         
 # Training params
@@ -33,7 +33,7 @@ params = {
 'n_epochs': 8000,
 'dynamic_env': False,                   # Train with dynamic environment
 'dynamic_env_type': "fade out",          # Type of dynamic environment
-'modulate_env': False,                   # Use alpha channel to modulate environment
+'modulate_env': True,                   # Use alpha channel to modulate environment
 'angle_target': True,                   # Train with rotation-invariance
 'knockout': False,                       # Whether hidden unit is fixed
 'knockout_unit': 6,                     # Hidden unit to fix
@@ -67,20 +67,20 @@ else:
     env = grid.add_env(env, "directional", channel = 0, angle = -45)
 
 # Train model
-model_losses = train(model, model_name, grid, env, params)
+# model_losses = train(model, model_name, grid, env, params)
 
 
 # Calculate number of params
-# total_params = 0
-# trainable_params = 0
+total_params = 0
+trainable_params = 0
 
-# for param in model.parameters():
-#     total_params += torch.prod(torch.tensor(param.shape)).item()  # Count total parameters
-#     if param.requires_grad:
-#         trainable_params += torch.prod(torch.tensor(param.shape)).item()  # Count parameters that requires_grad
+for param in model.parameters():
+    total_params += torch.prod(torch.tensor(param.shape)).item()  # Count total parameters
+    if param.requires_grad:
+        trainable_params += torch.prod(torch.tensor(param.shape)).item()  # Count parameters that requires_grad
 
-# print('Total parameters: ', total_params)
-# print('Trainable parameters: ', trainable_params)
+print('Total parameters: ', total_params)
+print('Trainable parameters: ', trainable_params)
 
 
 
