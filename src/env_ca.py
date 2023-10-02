@@ -14,7 +14,7 @@ class Env_CA(nn.Module):
         self.target = torch.tensor(target)
         self.model_channels = params.model_channels
         self.env_channels = params.env_channels
-        self.hidden_units = params.hidden_units
+        self.hidden_units = params.hidden_units[0]
         
         self.env = True if self.env_channels > 0 else False
         self.fire_rate = params.fire_rate
@@ -29,14 +29,20 @@ class Env_CA(nn.Module):
         nn.init.zeros_(self.conv1.bias)
         self.relu = nn.ReLU()
         
-        if params.n_layers == 2:
-            self.hidden_units_2 = params.hidden_units_2
-            self.extra = nn.Conv2d(self.hidden_units, self.hidden_units_2, 1)
-            nn.init.xavier_uniform_(self.extra.weight)
-            nn.init.zeros_(self.extra.bias)
+        self.conv2 = nn.Conv2d(self.hidden_units, self.model_channels, 1)
+        if params.n_layers > 1:
+            self.hidden_units_2 = params.hidden_units[1]
+            self.hidden_layer_2 = nn.Conv2d(self.hidden_units, self.hidden_units_2, 1)
+            nn.init.xavier_uniform_(self.hidden_layer_2.weight)
+            nn.init.zeros_(self.hidden_layer_2.bias)
             self.conv2 = nn.Conv2d(self.hidden_units_2, self.model_channels, 1)
-        else:
-            self.conv2 = nn.Conv2d(self.hidden_units, self.model_channels, 1)
+            if params.n_layers > 2:
+                self.hidden_units_3 = params.hidden_units[2]
+                self.hidden_layer_3 = nn.Conv2d(self.hidden_units_2, self.hidden_units_3, 1)
+                nn.init.xavier_uniform_(self.hidden_layer_3.weight)
+                nn.init.zeros_(self.hidden_layer_3.bias)
+                self.conv2 = nn.Conv2d(self.hidden_units_3, self.model_channels, 1)
+            
         
         nn.init.zeros_(self.conv2.weight)
         nn.init.zeros_(self.conv2.bias)
@@ -50,15 +56,16 @@ class Env_CA(nn.Module):
         out = self.relu(self.conv1(x))
         
         
-        out = self.relu(self.extra(out))
-        
+        out = self.relu(self.hidden_layer_2(out))
+       
+        # Save activation of hidden units
+        self.hidden_activity = out
         # If performing experiment with knockout, only knockout pixels with living cells
         if self.knockout == True:
             for i in self.params.knockout_unit:
                 out[0, i] = 0*living_cells
-                
-        # Save activation of hidden units
-        self.hidden_activity = out
+        
+        out = self.relu(self.hidden_layer_3(out))
         
         out = self.conv2(out)
         
