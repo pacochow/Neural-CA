@@ -15,6 +15,7 @@ class Env_CA(nn.Module):
         self.model_channels = params.model_channels
         self.env_channels = params.env_channels
         self.hidden_units = params.hidden_units[0]
+        self.n_layers = params.n_layers
         
         self.env = True if self.env_channels > 0 else False
         self.fire_rate = params.fire_rate
@@ -66,8 +67,8 @@ class Env_CA(nn.Module):
        
         
         
-        
-        out = self.relu(self.hidden_layer_3(out))
+        if self.n_layers == 3:
+            out = self.relu(self.hidden_layer_3(out))
         
         out = self.conv2(out)
         
