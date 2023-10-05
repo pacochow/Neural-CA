@@ -17,7 +17,7 @@ params = {
 'model_channels': 16, 
 'env_channels': 2,    
 'n_layers': 3,                          # Number of hidden layers   
-'hidden_units': [30, 70, 280],         # Number of units in hidden layers
+'hidden_units': [100, 125, 150],         # Number of units in hidden layers
 'fire_rate': 0.5,
         
 # Training params
