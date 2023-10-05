@@ -43,6 +43,12 @@ class Env_CA(nn.Module):
                 nn.init.xavier_uniform_(self.hidden_layer_3.weight)
                 nn.init.zeros_(self.hidden_layer_3.bias)
                 self.conv2 = nn.Conv2d(self.hidden_units_3, self.model_channels, 1)
+                if params.n_layers > 2:
+                    self.hidden_units_4 = params.hidden_units[3]
+                    self.hidden_layer_4 = nn.Conv2d(self.hidden_units_3, self.hidden_units_4, 1)
+                    nn.init.xavier_uniform_(self.hidden_layer_4.weight)
+                    nn.init.zeros_(self.hidden_layer_4.bias)
+                    self.conv2 = nn.Conv2d(self.hidden_units_4, self.model_channels, 1)
             
         
         nn.init.zeros_(self.conv2.weight)
@@ -67,8 +73,11 @@ class Env_CA(nn.Module):
        
         
         
-        if self.n_layers == 3:
+        if self.n_layers > 2:
             out = self.relu(self.hidden_layer_3(out))
+            
+            if self.n_layers > 3:
+                out = self.relu(self.hidden_layer_4(out))
         
         out = self.conv2(out)
         
