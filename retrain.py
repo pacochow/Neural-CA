@@ -14,8 +14,9 @@ params = {
     
 'grid_size': 50,
 'model_channels': 16, 
-'env_channels': 2,       
-'hidden_units': 400,                    # Number of units in hidden layer
+'env_channels': 2,
+'n_layers': 2,
+'hidden_units': [100, 200],      
 'fire_rate': 0.5,
         
 # Training params
@@ -48,7 +49,7 @@ target_img = pad_image(img, params.grid_size)
 model_name = "experimental"
 
 
-old_model_name = "fade_env"
+old_model_name = "2_hidden"
 model = torch.load(f"./models/{old_model_name}/final_weights.pt", map_location = device)
 model.target = torch.tensor(target_img)
 model.device = device
