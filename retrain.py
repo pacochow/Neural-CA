@@ -31,7 +31,6 @@ params = {
 'n_epochs': 8000,
 'dynamic_env': True,                   # Train with dynamic environment
 'dynamic_env_type': "fade out",          # Type of dynamic environment
-'env_output': False,                    # Train with model output to environment
 'modulate_env': True,                   # Use alpha channel to modulate environment
 'angle_target': True,                   # Train with rotation-invariance
 'knockout': False,                       # Whether hidden unit is fixed
