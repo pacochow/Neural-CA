@@ -31,19 +31,19 @@ class Env_CA(nn.Module):
         self.relu = nn.ReLU()
         
         self.conv2 = nn.Conv2d(self.hidden_units, self.model_channels, 1)
-        if params.n_layers > 1:
+        if self.n_layers > 1:
             self.hidden_units_2 = params.hidden_units[1]
             self.hidden_layer_2 = nn.Conv2d(self.hidden_units, self.hidden_units_2, 1)
             nn.init.xavier_uniform_(self.hidden_layer_2.weight)
             nn.init.zeros_(self.hidden_layer_2.bias)
             self.conv2 = nn.Conv2d(self.hidden_units_2, self.model_channels, 1)
-            if params.n_layers > 2:
+            if self.n_layers > 2:
                 self.hidden_units_3 = params.hidden_units[2]
                 self.hidden_layer_3 = nn.Conv2d(self.hidden_units_2, self.hidden_units_3, 1)
                 nn.init.xavier_uniform_(self.hidden_layer_3.weight)
                 nn.init.zeros_(self.hidden_layer_3.bias)
                 self.conv2 = nn.Conv2d(self.hidden_units_3, self.model_channels, 1)
-                if params.n_layers > 2:
+                if self.n_layers > 2:
                     self.hidden_units_4 = params.hidden_units[3]
                     self.hidden_layer_4 = nn.Conv2d(self.hidden_units_3, self.hidden_units_4, 1)
                     nn.init.xavier_uniform_(self.hidden_layer_4.weight)
@@ -67,18 +67,19 @@ class Env_CA(nn.Module):
         # If performing experiment with knockout, only knockout pixels with living cells
         if self.knockout == True:
             for i in self.params.knockout_unit:
-                out[0, i] = 0*living_cells
+                out[0, i] = 0.5*living_cells
         
-        out = self.relu(self.hidden_layer_2(out))
-       
+        if self.n_layers > 1:
+            out = self.relu(self.hidden_layer_2(out))
         
         
-        if self.n_layers > 2:
-            out = self.relu(self.hidden_layer_3(out))
+        
+            if self.n_layers > 2:
+                out = self.relu(self.hidden_layer_3(out))
+                
+                if self.n_layers > 3:
+                    out = self.relu(self.hidden_layer_4(out))
             
-            if self.n_layers > 3:
-                out = self.relu(self.hidden_layer_4(out))
-        
         out = self.conv2(out)
         
         return out
@@ -174,7 +175,7 @@ class Env_CA(nn.Module):
             # Apply update rule to all cells
             for i in range(perception_grid.shape[-1]):
                 for j in range(perception_grid.shape[-1]):
-                    self.knockout = True if 30<i<50 and 5<j<20 else False
+                    self.knockout = True if 30<i<35 and 10<j<15 else False
                     ds_grid[:, :, i, j] = self.forward(perception_grid[:, :, i:i+1, j:j+1], state_grid[0, 3, i, j])[..., 0, 0]
             
 
