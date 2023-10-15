@@ -29,7 +29,7 @@ params = {
 'gamma': 0.3,                           # Gamma factor for learning rate scheduler
 'decay': 3e-4,                          # Weight decay for adam
 'n_epochs': 8000,
-'dynamic_env': True,                   # Train with dynamic environment
+'dynamic_env': False,                   # Train with dynamic environment
 'dynamic_env_type': "fade out",          # Type of dynamic environment
 'modulate_env': True,                   # Use alpha channel to modulate environment
 'angle_target': True,                   # Train with rotation-invariance
