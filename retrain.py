@@ -6,6 +6,7 @@ from helpers.helpers import *
 import numpy as np
 import torch
 
+torch.cuda.empty_cache()
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 params = {
@@ -39,6 +40,8 @@ params = {
 
 params = ObjectView(params)
 
+torch.manual_seed(0)
+np.random.seed(0)
 
 # Get target image
 
@@ -65,3 +68,4 @@ else:
 
 # Train model
 model_losses = train(model, model_name, grid, env, params)
+
