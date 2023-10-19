@@ -45,7 +45,7 @@ np.random.seed(0)
 
 # Get target image
 
-img = np.load("./media/gecko_small_legs.npy")
+img = np.load("./media/snake_yellow.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
