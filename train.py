@@ -43,7 +43,7 @@ params = ObjectView(params)
 
 # Get target image
 
-img = np.load("./media/snake.npy")
+img = np.load("./media/ladybug.npy")
 target_img = pad_image(img, params.grid_size)
 
 model_name = "experimental"
