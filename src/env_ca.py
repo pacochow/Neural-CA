@@ -62,18 +62,21 @@ class Env_CA(nn.Module):
     def forward(self, x: torch.Tensor, living_cells = None):
         out = self.relu(self.conv1(x))
         
-        # Save activation of hidden units
-        self.hidden_activity = out
         # If performing experiment with knockout, only knockout pixels with living cells
         if self.knockout == True:
             for i in self.params.knockout_unit:
-                out[0, i] = 0.5*living_cells
+                out[0, i] = 0*living_cells
+            
         
         if self.n_layers > 1:
             out = self.relu(self.hidden_layer_2(out))
-        
-        
-        
+            # Save activation of hidden units
+            self.hidden_activity = out
+            
+
+
+
+            
             if self.n_layers > 2:
                 out = self.relu(self.hidden_layer_3(out))
                 

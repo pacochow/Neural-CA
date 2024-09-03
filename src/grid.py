@@ -44,7 +44,7 @@ class Grid:
         
         modulate_vals = state_grid[:, 3]
         
-        hidden_history = np.zeros((len(params.hidden_loc), params.iterations, model.hidden_units))
+        hidden_history = np.zeros((len(params.hidden_loc), params.iterations, model.hidden_units_2))
         # hidden_history = np.zeros((len(params.hidden_loc), params.iterations, 200))
         
         for t in range(params.iterations):

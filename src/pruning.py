@@ -138,7 +138,6 @@ def prune_by_unit(model: nn.Module, grid, env, params, prune_units: list, manual
   with torch.no_grad():
     for i in tqdm(range(len(prune_units))):
       params.knockout_unit = [prune_units[i]]
-      
       # Run model
       state_history, _, _ = grid.run(model, env, params, manual = manual)
 

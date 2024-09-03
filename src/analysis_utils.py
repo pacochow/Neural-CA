@@ -19,10 +19,10 @@ def find_hox_units(hidden_unit_history: dict, living_cells, phase: tuple) -> np.
     
     # Normalise temporal profiles
     temporal_profiles -= temporal_profiles[0]
-    development_profiles = np.abs(temporal_profiles[:60])
+    development_profiles = np.abs(temporal_profiles[:80])
         
     # Compute normalized expression levels
-    normalized_profiles = development_profiles/living_cells
+    # normalized_profiles = development_profiles/living_cells
 
 
         
@@ -42,15 +42,15 @@ def plot_expression_profiles(profiles: np.ndarray, sorted_list: np.ndarray, file
     plt.figure(figsize = (14, 8))
 
     # Find hox genes
-    for i in sorted_list[:20]:
+    for i in sorted_list:
         
-        plt.plot(profiles[:,i], linewidth = 3);
+        plt.plot(profiles[:,i], linewidth = 3.5);
 
-    plt.legend(sorted_list[:20], fontsize = 16)
-    plt.xlabel("Developmental time (iterations)", fontsize = 18)
-    plt.ylabel("Unit activity", fontsize = 18)
-    plt.yticks(fontsize = 18)
-    plt.xticks(fontsize = 18)
+    # plt.legend(sorted_list[:20], fontsize = 16, loc = 'upper right')
+    plt.xlabel("Developmental time (iterations)", fontsize = 22)
+    plt.ylabel("Activity of hidden unit", fontsize = 22)
+    plt.yticks(fontsize = 20)
+    plt.xticks(fontsize = 20)
     # plt.axvline(20, color = 'black', linestyle = 'dashed')
     for pos in ['right', 'top']:
         plt.gca().spines[pos].set_visible(False)
@@ -66,8 +66,9 @@ def progressive_knockout_loss(model: nn.Module, units: np.ndarray, grid, env, pa
     """
     
     losses = []
+    params.knockout = True
     
-    for i in range(30):
+    for i in range(20):
         
         # Knockout units
         params.knockout_unit = units[:i]
@@ -83,7 +84,6 @@ def progressive_knockout_loss(model: nn.Module, units: np.ndarray, grid, env, pa
         
         
     final_phenotype = state_history[-1, :, :, :4]
-    
     return final_phenotype, losses
         
         
