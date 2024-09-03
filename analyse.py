@@ -149,8 +149,8 @@ og_normalized_profiles, og_early_sorted = find_hox_units(og_hidden_unit_history,
 
 
 # Plot expression profiles
-filename = f'./models/{og_model_name}/expression_profiles.png'
-plot_expression_profiles(og_normalized_profiles, np.arange(20), filename)
+# filename = f'./models/{og_model_name}/expression_profiles.png'
+# plot_expression_profiles(og_normalized_profiles, np.arange(20), filename)
 
 # Plot progressive knockout loss
 # _, og_early_sorted = find_hox_units(og_hidden_unit_history, og_living_cells[:60], phase = (0, 20))

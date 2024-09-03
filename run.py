@@ -9,7 +9,7 @@ from src.analysis_utils import *
 from helpers.figures import * 
 
 # Load model
-model_name = "env_circle_16_1"
+model_name = "2_hidden_naive_snake"
 model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
 
 grid_coordinates = [(x, y) for x in range(50) for y in range(50)]
@@ -30,7 +30,7 @@ params = {
 'grid_size': 50,
 'iterations': 100,                  # Number of iterations in animation
 'angle': 0.0,                       # Perceiving angle
-'env_angle': 0,                    # Environment angle
+'env_angle': 45,                    # Environment angle
 'dynamic_env': False,               # Run with moving environment
 'dynamic_env_type': 'fade out',    # Type of moving environment    
 'destroy': False,                   # Whether pattern is disrupted mid animation
@@ -38,7 +38,7 @@ params = {
 'seed': None,                       # Coordinates of seed
 'vis_env': False,                   # Visualize environment in animation
 'vis_hidden': False,                 # Visualize hidden unit activity throughout run
-'modulate_env': False,               # Use alpha channel to modulate environment
+'modulate_env': True,               # Use alpha channel to modulate environment
 'hidden_loc': grid_coordinates, # Location of where to visualize hidden unit activity
 'knockout': False,                   # Whether hidden unit is fixed
 'knockout_unit': [42],                # Hidden unit to fix
@@ -58,8 +58,8 @@ grid = Grid(params)
 env = None
 env = grid.init_env(model.env_channels)
 # env = grid.add_env(env, "linear", 0, angle = params.env_angle)
-env = grid.add_env(env, "circle", 0, center = (params.grid_size/2, params.grid_size/2))
-# env = grid.add_env(env, "directional", 0, angle = params.env_angle, center = (params.grid_size/2, params.grid_size/2))
+# env = grid.add_env(env, "circle", 0, center = (params.grid_size/2, params.grid_size/2))
+env = grid.add_env(env, "directional", 0, angle = params.env_angle, center = (params.grid_size/2, params.grid_size/2))
 # env = grid.add_env(env, 'none')
 
 
@@ -77,9 +77,14 @@ state_history, env_history, hidden_history = grid.run(model, env, params, manual
 # filename = f'./models/{model_name}/run.mp4'
 # create_animation(state_history, env_history, filename, params)
 
-# Create animation stills
+# FIG 1B
+# filename = f'./models/{model_name}/run.png'
+# create_stills(state_history, env_history, filename, params, intervals = 3, format = (4, 6), dims = (12, 12))
+
+# FIG 4D
 filename = f'./models/{model_name}/run.png'
-create_stills(state_history, env_history, filename, params, intervals = 3, format = (3, 8), dims = (16, 6))
+create_stills(state_history, env_history, filename, params, intervals = 3, format = (2, 8), dims = (16, 7))
+
 
 # Visualise all channels stills
 # filename = f'./models/{model_name}/all_channels_run.png'
@@ -112,8 +117,8 @@ create_stills(state_history, env_history, filename, params, intervals = 3, forma
 
 # Save rotations
 # filename = f'./models/{model_name}/rotation.png'
-# fig, axes = plt.subplots(1, 5, figsize=(10, 7)) 
-# angles = np.arange(-45, 170, 45)
+# fig, axes = plt.subplots(1, 7, figsize=(1, 7)) 
+# angles = np.arange(-45, 315, 45)
 # for i, ax in enumerate(axes):
 #     params.env_angle = angles[i]
 #     env = grid.add_env(env, "directional", 0, angle = params.env_angle, center = (params.grid_size/2, params.grid_size/2))
@@ -131,7 +136,7 @@ create_stills(state_history, env_history, filename, params, intervals = 3, forma
 # for i in range(len(grid_coordinates)):
 #     grid_dict[grid_coordinates[i]] = hidden_history[i]
 
-# filename = f'./models/{model_name}/hidden_unit_history.pkl'
+# filename = f'./models/{model_name}/hidden_unit_2_history.pkl'
 # with open(filename, 'wb') as fp:
 #     pickle.dump(grid_dict, fp)
 
@@ -142,8 +147,9 @@ create_stills(state_history, env_history, filename, params, intervals = 3, forma
     
 # np.save(f'./models/{model_name}/living_cells.npy', living_cells)
 
-# save = f'./models/{model_name}/hox.mp4'
-# visualize_single_hidden_unit(grid_dict, units = np.arange(20), filename = save)
+# save = f'./models/{model_name}/layer_1_hidden_units.png'
+# # visualize_single_hidden_unit(grid_dict, units = np.arange(100), filename = save)
+# visualize_single_hidden_unit_still(grid_dict, units = np.arange(100), filename = save)
 
 
 # iterations = 100

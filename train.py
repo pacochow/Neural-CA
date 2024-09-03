@@ -29,7 +29,7 @@ params = {
 'milestones': [3000, 5000, 7000],       # Milestones for learning rate scheduler
 'gamma': 0.3,                           # Gamma factor for learning rate scheduler
 'decay': 3e-4,                          # Weight decay for adam
-'n_epochs': 16000,
+'n_epochs': 8000,
 'dynamic_env': False,                   # Train with dynamic environment
 'dynamic_env_type': "fade out",          # Type of dynamic environment
 'modulate_env': True,                   # Use alpha channel to modulate environment

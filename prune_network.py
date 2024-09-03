@@ -10,13 +10,16 @@ from src.analysis_utils import *
 import pickle
 
 # Load model
-model_name = "modulated_angled_env_directional_16_2_400"
+model_name = "2_hidden"
 model = torch.load(f"./models/{model_name}/final_weights.pt", map_location = torch.device('cpu'))
 
 
 filename = f'./models/{model_name}/hidden_unit_history.pkl'
 with open(filename, 'rb') as fp:
     hidden_unit_history = pickle.load(fp)
+filename = f'./models/{model_name}/hidden_unit_2_history.pkl'
+with open(filename, 'rb') as fp:
+    hidden_unit_history_2 = pickle.load(fp)
 living_cells = np.load(f"./models/{model_name}/living_cells.npy")
 
 params = {
@@ -73,13 +76,16 @@ env = grid.add_env(env, "directional", 0, angle = params.env_angle)
 # Compute loss by units
 # phenotypes, losses = prune_by_unit(model, grid, env, params, list(np.arange(400)), manual = False)
 # important_units = np.argsort(np.log10(losses))[::-1][:10]
-# og_normalized_profiles, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], phase = (35, 60))
 
+# FIG 3A   
+# og_normalized_profiles, early_sorted = find_hox_units(hidden_unit_history, living_cells[:60], phase = (0, 10))
+# filename = f"./models/{model_name}/knockin_homeobox_effects.png"
+# visualize_unit_effect(model, grid, env, params, early_sorted[:20], False, filename)
 
-# Prune by units
-# filename = f"./models/{model_name}/knockout_unit_effects.png"
-# visualize_unit_effect(model, grid, env, params, np.arange(150), False, filename)
-
+# # FIG 3B
+# og_normalized_profiles, early_sorted = find_hox_units(hidden_unit_history_2, living_cells[:60], phase = (0, 10))
+# filename = f"./models/{model_name}/knockin_homeobox_2_effects.png"
+# visualize_unit_effect(model, grid, env, params, early_sorted[:20], False, filename)
 
 # # Prune by channel
 # channel = 8
