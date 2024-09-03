@@ -24,7 +24,7 @@ def create_stills(states: np.ndarray, envs: np.ndarray, filename: str, params, i
             if params.vis_env == True:
                 ax.imshow(envs[times[i], 0], cmap = create_colormap(), vmin = 0, vmax = 1)
             ax.imshow(states[times[i]])
-            ax.set_title(f"t = {times[i]}")
+            # ax.set_title(f"t = {times[i]}")
             ax.axis('off')  # To turn off axis numbers
     else:
         fig, axes = plt.subplots(format[0], format[1], figsize = dims)
@@ -33,11 +33,12 @@ def create_stills(states: np.ndarray, envs: np.ndarray, filename: str, params, i
             if params.vis_env == True:
                 axes[i//format[1], i%format[1]].imshow(envs[times[i], 0], cmap = create_colormap(), vmin = 0, vmax = 1)
             axes[i//format[1], i%format[1]].imshow(states[times[i]])
-            axes[i//format[1], i%format[1]].set_title(f"t = {times[i]}", fontsize = 22)
+            # axes[i//format[1], i%format[1]].set_title(f"t = {times[i]}", fontsize = 22)
             # ax.axis('off')  # To turn off axis numbers
             axes[i//format[1], i%format[1]].set_xticks([])
             axes[i//format[1], i%format[1]].set_yticks([])
-
+            for axis in ['top','bottom','left','right']:
+                axes[i//format[1], i%format[1]].spines[axis].set_linewidth(3)
     plt.tight_layout()
     plt.savefig(filename, bbox_inches = 'tight')
     plt.show()
@@ -103,9 +104,8 @@ def visualize_pruning_stills(model: nn.Module, grid, filename: str, params, env 
     plt.show()
 
 
-    
+
 def visualize_hidden_unit_stills(hidden_unit_history: dict, units: str, filename: str, dims: tuple):
-    
     """
     Visualise hidden unit activity profiles
     """
@@ -123,93 +123,32 @@ def visualize_hidden_unit_stills(hidden_unit_history: dict, units: str, filename
     times = np.arange(0, iterations, intervals)
     times[0] = 1
     
-    fig, axes = plt.subplots(len(units), iterations//intervals, figsize = dims)
+    fig, axes = plt.subplots(len(units), iterations//intervals, figsize=dims)
     
+    # Adjust subplot layout to make space for colorbar
+    plt.subplots_adjust(right=0.85)
+
     for unit in range(len(units)):
-
         for j in range(len(times)):
-            axes[unit,j].imshow(unit_activity[unit, times[j]])
+            im = axes[unit, j].imshow(unit_activity[unit, times[j]], aspect='auto', vmin = 0, vmax = 0.5)
             if unit == 0:
-                axes[unit,j].set_title(f"t = {times[j]}", fontsize = 20)
-            axes[unit,j].set_xticks([])
-            axes[unit,j].set_yticks([])
-            
-            # Adding row titles at the first column
+                axes[unit, j].set_title(f"t = {times[j]}", fontsize=20)
+            axes[unit, j].set_xticks([])
+            axes[unit, j].set_yticks([])
+
             if j == 0:
-                axes[unit, j].set_ylabel(f"{units[unit]}", rotation=0, fontsize=24, va="center", labelpad = 50)
+                axes[unit, j].set_ylabel(f"{units[unit]}", rotation=0, fontsize=24, va="center", labelpad=50)
 
+    # Create a new axes for the colorbar on the right
+    cbar_ax = fig.add_axes([0.88, 0.11, 0.03, 0.13])  # Adjust these values as needed
+    cbar = fig.colorbar(im, cax=cbar_ax)
+    ticks = cbar.get_ticks()
+    if len(ticks) > 2:
+        cbar.set_ticks([ticks[0], ticks[-1]])
+    cbar.ax.tick_params(labelsize=15)  # Adjust the size as needed
 
-
-
-    plt.tight_layout()
-    plt.savefig(filename, bbox_inches = 'tight')
-    plt.show()
-    
-    
-def create_progress_stills(states: np.ndarray, filename: str):
-    
-    """
-    Visualise training progress
-    """
-
-    # First set up the figure, the axis, and the plot elements we want to animate
-    fig, axs = plt.subplots(nrows=1, ncols=4, figsize=(32,8))  # 4 subplots for 4 animations
-    
-    # Clip values between 0 and 1
-    states = states.clip(0, 1)[...,:4]
-    
-    # Titles
-    titles = [100, 500, 1000, 4000]
-    
-    for j in range(4):  # loop over your new dimension
-        
-        im = axs[j].imshow(states[j, -1])
-        axs[j].axis('off')
-        axs[j].set_title(titles[j], fontsize = 50)
-    
-    plt.tight_layout()
-    plt.savefig(filename, bbox_inches = 'tight')
-    plt.show()
-
-
-def visualise_hidden_channels_stills(states: np.ndarray, filename: str, params, intervals: int, format: tuple, dims: tuple):
-    
-    """
-    Visualise hidden channel activity
-    """
-    
-    # Clip values between 0 and 1
-    states = states.clip(0, 1)
-    
-    times = np.arange(0, len(states), intervals)
-
-    fig, axes = plt.subplots(format[0], format[1], figsize=dims)
-    
-    for channel in range(format[0]):
-        for i in range(format[1]):
-            if channel == 0:
-                axes[channel, i].imshow(states[times[i], :, :, :4])
-                axes[channel, i].set_title(f"t = {times[i]}", fontsize=24)
-            else:
-                axes[channel, i].imshow(states[times[i], :, :, channel+3])
-            
-
-            # Removing axis numbers
-            axes[channel, i].set_xticks([])
-            axes[channel, i].set_yticks([])
-
-            # Adding row titles at the first column
-            if i == 0:
-                
-                if channel == 0:
-                    axes[channel, i].set_ylabel("1-4", rotation=0, fontsize=24, va="center", labelpad = 50)
-                else:
-                    axes[channel, i].set_ylabel(f"{channel+4}", rotation=0, fontsize=24, va="center", labelpad = 50)
-
-    plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight')
     plt.show()
-
 
 def visualize_pruning_by_channel_stills(model: nn.Module, grid, filename: str, params, env: torch.Tensor = None):
     

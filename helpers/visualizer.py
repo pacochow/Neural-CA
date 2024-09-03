@@ -195,6 +195,40 @@ def visualize_single_hidden_unit(hidden_unit_history: dict, units: list, filenam
 
     print(' Full run done!')
     
+def visualize_single_hidden_unit_still(hidden_unit_history: dict, units: list, filename: str):
+
+    iterations = 100
+    unit_activity = np.zeros((len(units), iterations, 50, 50))
+    for unit in range(len(units)):
+        for i in range(50):
+            for j in range(50):
+                unit_activity[unit, :, i, j] = hidden_unit_history[(i, j)][:iterations, units[unit]]
+
+    
+    max = 15
+    ncols = len(units) if len(units)<max else max
+    nrows = len(units)//ncols+1 if len(units)%ncols!=0 else len(units)//ncols
+    
+
+    # First set up the figure, the axis, and the plot elements we want to animate
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols,8*nrows)) 
+
+
+    # Create an array to hold your image objects
+    ims = []
+
+    for j in range(nrows*ncols):  # loop over your new dimension
+        if j < len(units):
+            im = axs[j//ncols, j%ncols].imshow(unit_activity[j, -1], interpolation='none', aspect='auto', vmin=0, vmax = 0.1)
+            
+            axs[j//ncols, j%ncols].set_title(units[j], fontsize = 40)
+            ims.append(im)
+        axs[j//ncols, j%ncols].axis('off')
+    
+    plt.tight_layout()
+    plt.savefig(filename)
+
+    
 
 def load_progress_states(model_name: str, grid, params, env = None):
     """
@@ -579,8 +613,8 @@ def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, manu
     phenotypes, _ = prune_by_unit(model, grid, env, params, prune_units = prune_units, manual = manual)
     phenotypes = phenotypes.clip(0, 1)
     
-    ncols = 10
-    nrows = 10
+    ncols = 5
+    nrows = len(prune_units)//ncols
     
     # Create a grid of subplots
     fig, axs = plt.subplots(nrows, ncols, figsize=(8*ncols, 8*nrows))
@@ -588,7 +622,7 @@ def visualize_unit_effect(model: nn.Module, grid, env, params, prune_units, manu
     for i, ax in enumerate(axs.flatten()):
 
         ax.imshow(phenotypes[i])
-        ax.set_title(prune_units[i], fontsize = 80)
+        # ax.set_title(prune_units[i], fontsize = 80)
         ax.axis('off')  # Hide axis
 
     plt.tight_layout()
